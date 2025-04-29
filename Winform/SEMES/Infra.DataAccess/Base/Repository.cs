@@ -1,29 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using MySql.Data.MySqlClient;
 
 namespace Infra.DataAccess
 {
     public abstract class Repository
     {
-        /// <summary>
-        /// This abstract class is responsible for establishing the connection string
-        /// and get the SQL connection.
-        /// </summary>
+        private readonly string connectionString;
 
-        private readonly string connectionString;//Gets or sets the connection string.
-
-        public Repository()
+        protected Repository()
         {
-            connectionString = "Server=(local);DataBase= MyCompanyTest; integrated security= true";//Set the connection string.
+            // ★ DB 접속 정보 ‘직접’ 쓰기
+            connectionString =
+                "server=localhost;port=3306;" +
+                "database=MyCompanyTest;" +
+                "uid=root;pwd=root;";
         }
 
-        protected SqlConnection GetConnection()
-        {//This method is responsible for establishing and returning the connection object to SQL Server.
-            return new SqlConnection(connectionString);
-        }
+        protected MySqlConnection GetConnection()
+            => new MySqlConnection(connectionString);
     }
 }

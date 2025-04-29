@@ -1,242 +1,197 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Infra.DataAccess.Contracts;
+﻿using Infra.DataAccess.Contracts;
 using Infra.DataAccess.Entities;
-using Infra.Common;
-using System.Data.SqlClient;
+using MySql.Data.MySqlClient;
+using System;
+using System.Collections.Generic;
 using System.Data;
 
 namespace Infra.DataAccess.Repositories
 {
     public class UserRepository : MasterRepository, IUserRepository
     {
-        /// <summary>
-        /// This class inherits from the MasterRepository class and implements the IUserRepository interface.
-        /// Here the different transactions and queries the user entity are made to the database.
-        /// </summary>
-        /// 
-
+        /*────────── LoginUser 저장 프로시저 호출 ──────────*/
         public User Login(string username, string password)
-        {// Example of a query with several parameters using a stored procedure:
-            // Validate the username and password of the user for the login.
-
-            string commandText = "LoginUser"; // Set the text command (Transact-SQL or stored procedure).
-            CommandType commandType = CommandType.StoredProcedure; // Set the command type.
-            var parameters = new List<SqlParameter>(); // Create a generic list of for the query parameters.
-            parameters.Add(new SqlParameter("@user", username)); // Create and add the user parameter (Parameter name and value).
-            parameters.Add(new SqlParameter("@password", password)); // Create and add the password parameter (Parameter name and value).
-
-            var table = ExecuteReader(commandText, parameters, commandType);//Execute the reader method of the MasterRepository base class and send the necessary parameters.
-
-            if (table.Rows.Count > 0)//If the query was successful (valid username and password).
+        {
+            var p = new List<MySqlParameter>
             {
-                var user = new User(); // Create user entity-object.
-                foreach (DataRow row in table.Rows) // Loop through the rows of the table and assign the respective values of the user object.
+                new MySqlParameter("@p_user", username),
+                new MySqlParameter("@p_password", password)
+            };
+
+            var tbl = ExecuteReader("LoginUser", p, CommandType.StoredProcedure);
+            if (tbl.Rows.Count == 0) return null;
+
+            var r = tbl.Rows[0];
+            return new User
+            {
+                Id = Convert.ToInt32(r[0]),
+                Username = r[1].ToString(),
+                Password = r[2].ToString(),
+                FirstName = r[3].ToString(),
+                LastName = r[4].ToString(),
+                Position = r[5].ToString(),
+                Email = r[6].ToString(),
+                Photo = r[7] == DBNull.Value ? null : (byte[])r[7]
+            };
+        }
+
+        /*────────── AddUser 저장 프로시저 ──────────*/
+        public int Add(User e)
+        {
+            var p = new List<MySqlParameter>
+            {
+                new MySqlParameter("@userName",  e.Username),
+                new MySqlParameter("@password",  e.Password),
+                new MySqlParameter("@firstName", e.FirstName),
+                new MySqlParameter("@lastName",  e.LastName),
+                new MySqlParameter("@position",  e.Position),
+                new MySqlParameter("@email",     e.Email),
+                new MySqlParameter("@photo",     e.Photo == null ? (object)DBNull.Value : e.Photo)
+                    { MySqlDbType = MySqlDbType.Blob }
+            };
+            return ExecuteNonQuery("AddUser", p, CommandType.StoredProcedure);
+        }
+
+        /*────────── EditUser 저장 프로시저 ──────────*/
+        public int Edit(User e)
+        {
+            var p = new List<MySqlParameter>
+            {
+                new MySqlParameter("@id",        e.Id),
+                new MySqlParameter("@userName",  e.Username),
+                new MySqlParameter("@password",  e.Password),
+                new MySqlParameter("@firstName", e.FirstName),
+                new MySqlParameter("@lastName",  e.LastName),
+                new MySqlParameter("@position",  e.Position),
+                new MySqlParameter("@email",     e.Email),
+                new MySqlParameter("@photo",     e.Photo == null ? (object)DBNull.Value : e.Photo)
+                    { MySqlDbType = MySqlDbType.Blob }
+            };
+            return ExecuteNonQuery("EditUser", p, CommandType.StoredProcedure);
+        }
+
+        /*────────── 단일 삭제 (텍스트 쿼리) ──────────*/
+        public int Remove(User e)
+        {
+            return ExecuteNonQuery("DELETE FROM Users WHERE id=@id",
+                                   new MySqlParameter("@id", e.Id),
+                                   CommandType.Text);
+        }
+
+        /*────────── 대량 추가 ──────────*/
+        public int AddRange(List<User> list)
+        {
+            var txs = new List<BulkTransaction>();
+            foreach (var u in list)
+            {
+                var p = new List<MySqlParameter>
                 {
-                    user.Id = (int)(row[0]);//Cell position [0].
-                    user.Username = row[1].ToString();
-                    user.Password = row[2].ToString();
-                    user.FirstName = row[3].ToString();
-                    user.LastName = row[4].ToString();
-                    user.Position = row[5].ToString();
-                    user.Email = row[6].ToString();
-                    if (row[7] != DBNull.Value) user.Photo = (byte[])row[7];//Set value if cell value is other than null.
-                }
-                return user;//Return user object.
+                    new MySqlParameter("@userName",  u.Username),
+                    new MySqlParameter("@password",  u.Password),
+                    new MySqlParameter("@firstName", u.FirstName),
+                    new MySqlParameter("@lastName",  u.LastName),
+                    new MySqlParameter("@position",  u.Position),
+                    new MySqlParameter("@email",     u.Email),
+                    new MySqlParameter("@photo",     u.Photo == null ? (object)DBNull.Value : u.Photo)
+                        { MySqlDbType = MySqlDbType.Blob }
+                };
+                txs.Add(new BulkTransaction { CommandText = "AddUser", Parameters = p });
             }
-            else //If the query was not successful - return a null object.
-                return null;
+            return BulkExecuteNonQuery(txs, CommandType.StoredProcedure);
         }
 
-        public int Add(User entity)
-        {// Example of a transaction with various parameters using a stored procedure:
-            // Add a new user.
-
-            var parameters = new List<SqlParameter>();//Create a list for the transaction parameters.
-            parameters.Add(new SqlParameter("@userName", entity.Username));
-            parameters.Add(new SqlParameter("@password", entity.Password));
-            parameters.Add(new SqlParameter("@firstName", entity.FirstName));
-            parameters.Add(new SqlParameter("@lastName", entity.LastName));
-            parameters.Add(new SqlParameter("@position", entity.Position));
-            parameters.Add(new SqlParameter("@email", entity.Email));
-            if (entity.Photo != null)//If the Photo property is other than null, assign the property value.
-                parameters.Add(new SqlParameter("@photo", entity.Photo) { SqlDbType = SqlDbType.VarBinary });//In this case of the Photo field, it is important to explicitly specify the SQL data type,
-            else //Otherwise assign a null value from SQL.                                                    //You can do the same with the other parameters, however it is optional,
-                parameters.Add(new SqlParameter("@photo", DBNull.Value) { SqlDbType = SqlDbType.VarBinary }); //The data type will be derived from the data type of its value.
-
-            // Execute the ExecuteNonQuery method of the MasterRepository class to perform an insert transaction,
-            // and send the necessary parameters (Text command, parameters and type of command).
-            return ExecuteNonQuery("AddUser", parameters, CommandType.StoredProcedure);
-        }
-        public int Edit(User entity)
-        {// Example of a transaction with various parameters using a stored procedure:
-            // Edit user.
-
-            var parameters = new List<SqlParameter>();//Create a list for the transaction parameters.
-            parameters.Add(new SqlParameter("@id", entity.Id));
-            parameters.Add(new SqlParameter("@userName", entity.Username));
-            parameters.Add(new SqlParameter("@password", entity.Password));
-            parameters.Add(new SqlParameter("@firstName", entity.FirstName));
-            parameters.Add(new SqlParameter("@lastName", entity.LastName));
-            parameters.Add(new SqlParameter("@position", entity.Position));
-            parameters.Add(new SqlParameter("@email", entity.Email));
-            if (entity.Photo != null)
-                parameters.Add(new SqlParameter("@photo", entity.Photo) { SqlDbType = SqlDbType.VarBinary });
-            else parameters.Add(new SqlParameter("@photo", DBNull.Value) { SqlDbType = SqlDbType.VarBinary });
-
-            // Execute the ExecuteNonQuery method of the MasterRepository class to perform an update transaction,
-            // and send the necessary parameters (Text command, parameters and type of command).
-            return ExecuteNonQuery("EditUser", parameters, CommandType.StoredProcedure);
-        }
-        public int Remove(User entity)
-        {// Example of a transaction with a single parameter using a Transact-SQL command:
-            // Delete user.
-
-            string sqlCommand = "delete from Users where id=@id";//Command of type text (Transact-SQL)
-            return ExecuteNonQuery(sqlCommand, new SqlParameter("@id", entity.Id), CommandType.Text);
-        }
-        public int AddRange(List<User> users)
-        {// Example of a bulk transaction using a stored procedure:
-            // Add multiple users.
-
-            var transactions = new List<BulkTransaction>();//Create a generic list for transactions.
-
-            foreach (var user in users)//Loop through the list of users and add the instructions to the list of transactions.
+        /*────────── 대량 삭제 ──────────*/
+        public int RemoveRange(List<User> list)
+        {
+            var txs = new List<BulkTransaction>();
+            foreach (var u in list)
             {
-                var trans = new BulkTransaction();//Create a transaction object.
-                var parameters = new List<SqlParameter>();//Create a list for the transaction parameters.
-                //In this case of a bulk transaction, it is convenient to specify the data type of the parameter.
-                parameters.Add(new SqlParameter("@userName", user.Username) { SqlDbType = SqlDbType.NVarChar });
-                parameters.Add(new SqlParameter("@password", user.Password) { SqlDbType = SqlDbType.NVarChar });
-                parameters.Add(new SqlParameter("@firstName", user.FirstName) { SqlDbType = SqlDbType.NVarChar });
-                parameters.Add(new SqlParameter("@lastName", user.LastName) { SqlDbType = SqlDbType.NVarChar });
-                parameters.Add(new SqlParameter("@position", user.Position) { SqlDbType = SqlDbType.NVarChar });
-                parameters.Add(new SqlParameter("@email", user.Email) { SqlDbType = SqlDbType.NVarChar });
-                if (user.Photo != null)
-                    parameters.Add(new SqlParameter("@photo", user.Photo) { SqlDbType = SqlDbType.VarBinary });
-                else parameters.Add(new SqlParameter("@photo", DBNull.Value) { SqlDbType = SqlDbType.VarBinary });
-
-                trans.CommandText = "AddUser"; // Set the text command (In this case a stored procedure).
-                trans.Parameters = parameters; // Set the parameters of the instruction (Text command).
-
-                transactions.Add(trans); // Add the transaction to the list of transactions.
+                txs.Add(new BulkTransaction
+                {
+                    CommandText = "DELETE FROM Users WHERE id=@id",
+                    Parameters = new List<MySqlParameter>
+                                  { new MySqlParameter("@id", u.Id) }
+                });
             }
-            //You can continue adding more transactions to other tables to the generic list of transactions.
-
-            //Finally execute all the instructions of the transaction list using the BulkExecuteNonQuery method 
-            //of the MasterRepository base class, send the necessary parameters (List of transactions and the type of command.)
-            return BulkExecuteNonQuery(transactions, CommandType.StoredProcedure);
-        }
-        public int RemoveRange(List<User> users)
-        {// Example of a bulk transaction using a Transact-SQL command:
-            // Delete multiple users.
-
-            var transactions = new List<BulkTransaction>();
-
-            foreach (var user in users)
-            {
-                var trans = new BulkTransaction();
-                trans.CommandText = "delete from Users where id=@id";
-                trans.Parameters = new List<SqlParameter> { new SqlParameter("@id", user.Id) { SqlDbType = SqlDbType.Int } };
-
-                transactions.Add(trans);
-            }
-            return BulkExecuteNonQuery(transactions, CommandType.Text);
+            return BulkExecuteNonQuery(txs, CommandType.Text);
         }
 
+        /*────────── 검색 / 조회 ──────────*/
         public User GetSingle(string value)
-        {// Example of a query using a Transact-SQL command with a parameter:
-            // Get a user according to the specified value (Search).
-
-            string sqlCommand;
-            DataTable table;
-            int idUser;
-
-            bool isNumeric = int.TryParse(value, out idUser);//Determine if the value parameter is an integer.
-            if (isNumeric)//If the value is a number, query using the user's id.
+        {
+            string sql;
+            List<MySqlParameter> p;
+            int id;
+            if (int.TryParse(value, out id))
             {
-                sqlCommand = "select *from Users where id= @idUser";
-                table = ExecuteReader(sqlCommand, new SqlParameter("@idUser", idUser), CommandType.Text);
+                sql = "SELECT * FROM Users WHERE id=@id";
+                p = new List<MySqlParameter> { new MySqlParameter("@id", id) };
             }
-            else //Otherwise, make the query using the username or email.
+            else
             {
-                sqlCommand = "select *from Users where userName= @findValue or email=@findValue";
-                table = ExecuteReader(sqlCommand, new SqlParameter("@findValue", value), CommandType.Text);
+                sql = "SELECT * FROM Users WHERE userName=@v OR email=@v";
+                p = new List<MySqlParameter> { new MySqlParameter("@v", value) };
             }
 
-            if (table.Rows.Count > 0)//If the query is successful
-            {
-                var user = new User();//Create a user object and assign the values.
-                foreach (DataRow row in table.Rows)
-                {
-                    user.Id = Convert.ToInt32(row[0]);
-                    user.Username = row[1].ToString();
-                    user.Password = row[2].ToString();
-                    user.FirstName = row[3].ToString();
-                    user.LastName = row[4].ToString();
-                    user.Position = row[5].ToString();
-                    user.Email = row[6].ToString();
-                    if (row[7] != DBNull.Value) user.Photo = (byte[])row[7];
-                }
-                //Optionally disposing the table to free memory (Dispose() method doesn't work on DataTable, DataSet and others).
-                table.Clear();
-                table = null;
+            var tbl = ExecuteReader(sql, p, CommandType.Text);
+            if (tbl.Rows.Count == 0) return null;
 
-                return user;//Return user found.
-            }
-            else//If the query was not successful, return null object.
-                return null;
+            var r = tbl.Rows[0];
+            return new User
+            {
+                Id = Convert.ToInt32(r[0]),
+                Username = r[1].ToString(),
+                Password = r[2].ToString(),
+                FirstName = r[3].ToString(),
+                LastName = r[4].ToString(),
+                Position = r[5].ToString(),
+                Email = r[6].ToString(),
+                Photo = r[7] == DBNull.Value ? null : (byte[])r[7]
+            };
         }
+
         public IEnumerable<User> GetAll()
         {
-            var userList = new List<User>();
-            var table = ExecuteReader("SelectAllUsers", CommandType.StoredProcedure);
-
-            foreach (DataRow row in table.Rows)
+            var tbl = ExecuteReader("SelectAllUsers", CommandType.StoredProcedure);
+            var list = new List<User>();
+            foreach (DataRow r in tbl.Rows)
             {
-                var user = new User();
-                user.Id = Convert.ToInt32(row[0]);
-                user.Username = row[1].ToString();
-                user.Password = row[2].ToString();
-                user.FirstName = row[3].ToString();
-                user.LastName = row[4].ToString();
-                user.Position = row[5].ToString();
-                user.Email = row[6].ToString();
-                if (row[7] != DBNull.Value) user.Photo = (byte[])row[7];
-
-                userList.Add(user);
+                list.Add(new User
+                {
+                    Id = Convert.ToInt32(r[0]),
+                    Username = r[1].ToString(),
+                    Password = r[2].ToString(),
+                    FirstName = r[3].ToString(),
+                    LastName = r[4].ToString(),
+                    Position = r[5].ToString(),
+                    Email = r[6].ToString(),
+                    Photo = r[7] == DBNull.Value ? null : (byte[])r[7]
+                });
             }
-            table.Clear();
-            table = null;
-
-            return userList;
+            return list;
         }
+
         public IEnumerable<User> GetByValue(string value)
         {
-            var userList = new List<User>();
-            var table = ExecuteReader("SelectUser", new SqlParameter("@findValue", value), CommandType.StoredProcedure);
-
-            foreach (DataRow row in table.Rows)
+            var tbl = ExecuteReader("SelectUser",
+                                    new MySqlParameter("@findValue", value),
+                                    CommandType.StoredProcedure);
+            var list = new List<User>();
+            foreach (DataRow r in tbl.Rows)
             {
-                var user = new User();
-                user.Id = Convert.ToInt32(row[0]);
-                user.Username = row[1].ToString();
-                user.Password = row[2].ToString();
-                user.FirstName = row[3].ToString();
-                user.LastName = row[4].ToString();
-                user.Position = row[5].ToString();
-                user.Email = row[6].ToString();
-                if (row[7] != DBNull.Value) user.Photo = (byte[])row[7];
-
-                userList.Add(user);
+                list.Add(new User
+                {
+                    Id = Convert.ToInt32(r[0]),
+                    Username = r[1].ToString(),
+                    Password = r[2].ToString(),
+                    FirstName = r[3].ToString(),
+                    LastName = r[4].ToString(),
+                    Position = r[5].ToString(),
+                    Email = r[6].ToString(),
+                    Photo = r[7] == DBNull.Value ? null : (byte[])r[7]
+                });
             }
-            table.Clear();
-            table = null;
-
-            return userList;
+            return list;
         }
     }
 }

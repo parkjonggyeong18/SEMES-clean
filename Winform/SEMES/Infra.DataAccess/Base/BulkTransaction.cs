@@ -4,7 +4,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using MySql.Data.MySqlClient;
 namespace Infra.DataAccess
 {
     public class BulkTransaction
@@ -15,12 +15,9 @@ namespace Infra.DataAccess
         /// For more details see the BulkExecuteNonQuery () method of the MasterRepository class.
         /// </summary>
         /// 
-        public string CommandText { get; set; } // Gets or sets a text command.
-        public List<SqlParameter> Parameters { get; set; } // Gets or sets a collection of parameters for the text command.
-
-        public BulkTransaction()
-        {
-            Parameters = new List<SqlParameter>(); // Initialize the list of parameters.
-        }
+        public string CommandText { get; set; }
+        public List<MySqlParameter> Parameters { get; set; }   // ★ 수정
+        public BulkTransaction() => Parameters = new List<MySqlParameter>();
     }
-}
+    }
+
