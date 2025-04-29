@@ -1,0 +1,2 @@
+아이디 admin
+비번 admin
