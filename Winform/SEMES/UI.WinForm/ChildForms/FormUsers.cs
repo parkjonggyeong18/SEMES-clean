@@ -3,15 +3,7 @@ using Domain.Models.Contracts;
 using Infra.Common;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using UI.WinForm.Helpers;
-using UI.WinForm.Utils;
 using UI.WinForm.ViewModels;
 
 namespace UI.WinForm.ChildForms
