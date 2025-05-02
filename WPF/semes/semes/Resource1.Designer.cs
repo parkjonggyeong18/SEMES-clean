@@ -69,5 +69,15 @@ namespace semes {
                 return ((byte[])(obj));
             }
         }
+        
+        /// <summary>
+        ///   System.Byte[] 형식의 지역화된 리소스를 찾습니다.
+        /// </summary>
+        internal static byte[] semes_logo {
+            get {
+                object obj = ResourceManager.GetObject("semes_logo", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
     }
 }

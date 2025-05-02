@@ -23,7 +23,7 @@
         <!-- 상단 도구 모음 -->
         <materialDesign:Card Grid.Row="0" Grid.Column="0" Margin="10,10,10,10" Padding="10">
             <StackPanel Orientation="Horizontal">
-                <Button 
+                <Button
                     Style="{StaticResource MaterialDesignOutlinedButton}"
                     Margin="5"
                     Content="이미지 업로드"/>

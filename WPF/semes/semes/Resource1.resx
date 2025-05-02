@@ -121,4 +121,7 @@
   <data name="pcb_with_dies" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\final_pcb_with_dies_and_defects6.tif;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="semes_logo" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\semes_logo.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
 </root>
