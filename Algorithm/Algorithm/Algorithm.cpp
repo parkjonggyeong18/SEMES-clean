@@ -1,4 +1,6 @@
-﻿#define _CRT_SECURE_NO_WARNINGS
+﻿// ✅ 초고속 PCB 이물질 감지 코드 (1~2초 목표)
+
+#define _CRT_SECURE_NO_WARNINGS
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -6,221 +8,145 @@
 #include <unordered_map>
 #include <atomic>
 #include <chrono>
-#include <omp.h>              // OpenMP 병렬 처리
-#include <immintrin.h>        // SIMD (AVX 명령어)
-#include <windows.h>          // Windows mmap 파일 매핑
-#include <charconv>           // 고속 문자열 숫자 변환 from_chars
-
+#include <omp.h>
+#include <immintrin.h>
+#include <windows.h>
+#include <charconv>
+#include <functional>
 using namespace std;
 
-// ✅ Union-Find 자료구조 (경로 압축 + rank 병합)
-class UnionFind {
-public:
-    vector<int> parent, rank;
-    UnionFind(int size) : parent(size), rank(size, 0) {
-#pragma omp parallel for
-        for (int i = 0; i < size; i++) {
-            parent[i] = i;
-        }
-    }
-
-    int find(int x) {
-        while (parent[x] != x) {
-            parent[x] = parent[parent[x]];
-            x = parent[x];
-        }
-        return x;
-    }
-
-    void unionSets(int x, int y) {
-        int rootX = find(x), rootY = find(y);
-        if (rootX == rootY) return;
-        if (rank[rootX] < rank[rootY]) {
-            parent[rootX] = rootY;
-        }
-        else {
-            parent[rootY] = rootX;
-            if (rank[rootX] == rank[rootY]) rank[rootX]++;
-        }
-    }
-};
-
-// ✅ 숫자를 Excel 열 주소로 변환 (예: 1 -> A, 28 -> AB)
+// ✅ Excel 주소 변환 함수
 string toExcelColumn(int num) {
-    string col;
-    while (num > 0) {
-        num--;
-        col = char('A' + (num % 26)) + col;
-        num /= 26;
-    }
-    return col;
+	string col;
+	while (num > 0) {
+		num--;
+		col = char('A' + (num % 26)) + col;
+		num /= 26;
+	}
+	return col;
 }
 
 int main() {
+
 #ifdef _OPENMP
-    cout << "OpenMP 활성화됨. 최대 스레드 수: " << omp_get_max_threads() << endl;
+	cout << "OpenMP 활성화됨. 최대 스레드 수: " << omp_get_max_threads() << endl;
 #else
-    cerr << "OpenMP가 활성화되지 않았습니다." << endl;
-    return -1;
+	cerr << "OpenMP가 활성화되지 않았습니다." << endl;
+	return -1;
 #endif
 
 
-    auto start = chrono::high_resolution_clock::now();
+	auto start = chrono::high_resolution_clock::now();
 
-    // ✅ 파일 열기 및 mmap 설정
-    string path = "C:/Users/SSAFY/Desktop/final_pcb_with_dies_and_defects3.csv";
-    HANDLE hFile = CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (hFile == INVALID_HANDLE_VALUE) return -1;
 
-    HANDLE hMapping = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
-    if (!hMapping) return -1;
+	// ✅ 파일 mmap
+	string path = "C:/Users/SSAFY/Desktop/final_pcb_with_dies_and_defects6.csv";
+	HANDLE hFile = CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hFile == INVALID_HANDLE_VALUE) return -1;
+	HANDLE hMap = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
+	if (!hMap) return -1;
+	char* filedata = (char*)MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
+	DWORD filesize = GetFileSize(hFile, NULL);
 
-    char* filedata = (char*)MapViewOfFile(hMapping, FILE_MAP_READ, 0, 0, 0);
-    if (!filedata) return -1;
+	// ✅ 1차: 줄 수 세기
+	int rows = 0, cols = 0;
+	for (DWORD i = 0; i < filesize; i++) {
+		if (filedata[i] == '\n') rows++;
+		if (rows == 0 && filedata[i] == ',') cols++;
+	}
+	cols++;  // 마지막 열 포함
+	float* flat = new float[rows * cols];
 
-    DWORD filesize = GetFileSize(hFile, NULL);
-    if (filesize == INVALID_FILE_SIZE) return -1;
+	// ✅ 병렬 파싱 (줄 단위 분할)
+	vector<size_t> line_offsets;
+	line_offsets.push_back(0);
+	for (DWORD i = 0; i < filesize; i++) {
+		if (filedata[i] == '\n') line_offsets.push_back(i + 1);
+	}
 
-    // ✅ from_chars 기반 직접 파싱 (빈 셀/지수 대응)
-    vector<vector<float>> data;
-    data.emplace_back();
-    char* cur = filedata;
-    char* end_time = filedata + filesize;
+#pragma omp parallel for schedule(dynamic)
+	for (int y = 0; y < rows; y++) {
+		char* start = filedata + line_offsets[y];
+		char* end = filedata + (y + 1 < line_offsets.size() ? line_offsets[y + 1] : filesize);
+		int x = 0;
+		while (start < end && x < cols) {
+			char* next = start;
+			while (next < end && *next != ',' && *next != '\n') next++;
+			float val;
+			from_chars(start, next, val);
+			flat[y * cols + x++] = val;
+			start = (*next == ',' || *next == '\n') ? next + 1 : next;
+		}
+	}
+	UnmapViewOfFile(filedata);
+	CloseHandle(hMap);
+	CloseHandle(hFile);
 
-    while (cur < end_time) {
-        if (*cur == ',' || *cur == '\n') {
-            if (cur != filedata) {
-                float val;
-                auto [ptr, ec] = from_chars(filedata, cur, val);
-                if (ec == errc()) {
-                    data.back().push_back(val);
-                }
-            }
-            filedata = cur + 1;
-            if (*cur == '\n') data.emplace_back();
-        }
-        cur++;
-    }
-    if (data.back().empty()) data.pop_back();
-    UnmapViewOfFile(filedata);
-    CloseHandle(hMapping);
-    CloseHandle(hFile);
-
-    // ✅ 이진화 (SIMD AVX2 병렬처리 포함)
-    int H = data.size(), W = data[0].size();
-    float threshold = 2.5;
-    vector<vector<int>> binary(H, vector<int>(W));
+	// ✅ AVX2 이진화
+	float threshold = 2.5;
+	uint8_t* binary = new uint8_t[rows * cols];
 #pragma omp parallel for
-    for (int y = 0; y < H; y++) {
-        int x = 0;
-        for (; x + 7 < W; x += 8) {
-            __m256 vals = _mm256_loadu_ps(&data[y][x]);
-            __m256 thresh = _mm256_set1_ps(threshold);
-            __m256 result = _mm256_cmp_ps(vals, thresh, _CMP_GE_OS);
-            int mask = _mm256_movemask_ps(result);
-            for (int i = 0; i < 8; i++) {
-                binary[y][x + i] = (mask >> i) & 1;
-            }
-        }
-        for (; x < W; x++) {
-            binary[y][x] = data[y][x] >= threshold ? 1 : 0;
-        }
-    }
+	for (int y = 0; y < rows; y++) {
+		int x = 0;
+		for (; x + 7 < cols; x += 8) {
+			__m256 vals = _mm256_loadu_ps(&flat[y * cols + x]);
+			__m256 thresh = _mm256_set1_ps(threshold);
+			__m256 result = _mm256_cmp_ps(vals, thresh, _CMP_GE_OS);
+			int mask = _mm256_movemask_ps(result);
+			for (int i = 0; i < 8; i++) binary[y * cols + x + i] = (mask >> i) & 1;
+		}
+		for (; x < cols; x++) {
+			binary[y * cols + x] = flat[y * cols + x] >= threshold;
+		}
+	}
+	delete[] flat;
 
-    // ✅ 라벨링 1차 패스 (순차 Union-Find 병합)
-    vector<vector<int>> labels(H, vector<int>(W));
-    UnionFind uf(H * W);
-    atomic<int> label(1);
-    for (int y = 0; y < H; y++) {
-        for (int x = 0; x < W; x++) {
-            if (!binary[y][x]) continue;
-            int left = (x > 0) ? labels[y][x - 1] : 0;
-            int up = (y > 0) ? labels[y - 1][x] : 0;
-            if (left == 0 && up == 0) {
-                labels[y][x] = label++;
-            }
-            else if (left != 0 && up == 0) {
-                labels[y][x] = left;
-            }
-            else if (left == 0 && up != 0) {
-                labels[y][x] = up;
-            }
-            else {
-                labels[y][x] = min(left, up);
-                uf.unionSets(left, up);
-            }
-        }
-    }
+	// ✅ 이물질 blob 좌표만 추출 (dfs)
+	struct BlobInfo {
+		int minX = INT_MAX, minY = INT_MAX, maxX = 0, maxY = 0;
+	};
+	vector<BlobInfo> blobs;
+	vector<vector<bool>> visited(rows, vector<bool>(cols, false));
+	int dx[] = { 1, -1, 0, 0 }, dy[] = { 0, 0, 1, -1 };
 
-    // ✅ 라벨 정규화 (2차 패스)
-    vector<int> root_to_new(label);
-    atomic<int> newLabel(1);
-#pragma omp parallel for collapse(2)
-    for (int y = 0; y < H; y++) {
-        for (int x = 0; x < W; x++) {
-            if (labels[y][x] != 0) {
-                int root = uf.find(labels[y][x]);
-                labels[y][x] = root;
-                if (root_to_new[root] == 0) {
-#pragma omp critical
-                    {
-                        if (root_to_new[root] == 0) {
-                            root_to_new[root] = newLabel++;
-                        }
-                    }
-                }
-            }
-        }
-    }
+	function<void(int, int)> dfs = [&](int y, int x) {
+		visited[y][x] = true;
+		blobs.back().minX = min(blobs.back().minX, x);
+		blobs.back().minY = min(blobs.back().minY, y);
+		blobs.back().maxX = max(blobs.back().maxX, x);
+		blobs.back().maxY = max(blobs.back().maxY, y);
+		for (int d = 0; d < 4; d++) {
+			int ny = y + dy[d], nx = x + dx[d];
+			if (ny >= 0 && ny < rows && nx >= 0 && nx < cols && !visited[ny][nx] && binary[ny * cols + nx]) {
+				dfs(ny, nx);
+			}
+		}
+		};
+	for (int y = 0; y < rows; y++) {
+		for (int x = 0; x < cols; x++) {
+			if (binary[y * cols + x] && !visited[y][x]) {
+				blobs.emplace_back();
+				dfs(y, x);
+			}
+		}
+	}
+	delete[] binary;
 
-    // ✅ 최종 라벨로 재할당
-#pragma omp parallel for collapse(2)
-    for (int y = 0; y < H; y++) {
-        for (int x = 0; x < W; x++) {
-            if (labels[y][x] != 0) {
-                labels[y][x] = root_to_new[labels[y][x]];
-            }
-        }
-    }
+	// ✅ 결과 출력
+	ofstream fout("C:/Users/SSAFY/Desktop/defect_coordinates_excel.csv");
+	fout << "Blob,ExcelRange\n";
+	int idx = 1;
+	for (auto& b : blobs) {
+		string start = toExcelColumn(b.minX + 1) + to_string(b.minY + 1);
+		string end = toExcelColumn(b.maxX + 1) + to_string(b.maxY + 1);
+		fout << idx++ << "," << start << "~" << end << "\n";
+		cout << "Blob: " << idx - 1 << ", 위치: " << start << "~" << end << endl;
+	}
+	fout.close();
 
-    // ✅ 불량 좌표 기록 (스레드 분리 + 병합 방식)
-    vector<unordered_map<int, pair<string, string>>> localMaps(omp_get_max_threads());
-#pragma omp parallel for
-    for (int y = 0; y < H; y++) {
-        int tid = omp_get_thread_num();
-        for (int x = 0; x < W; x++) {
-            int lbl = labels[y][x];
-            if (lbl != 0) {
-                string addr = toExcelColumn(x + 1) + to_string(y + 1);
-                auto& m = localMaps[tid];
-                if (m.find(lbl) == m.end()) m[lbl] = { addr, addr };
-                else m[lbl].second = addr;
-            }
-        }
-    }
-
-    unordered_map<int, pair<string, string>> labelRange;
-    for (auto& m : localMaps) {
-        for (auto& [lbl, range] : m) {
-            if (labelRange.find(lbl) == labelRange.end()) labelRange[lbl] = range;
-            else labelRange[lbl].second = range.second;
-        }
-    }
-
-    // ✅ 결과 저장
-    ofstream fout("C:/Users/SSAFY/Desktop/defect_coordinates_excel.csv");
-    fout << "Label,ExcelAddress\n";
-    for (auto& [lbl, range] : labelRange) {
-        fout << lbl << "," << range.first << "~" << range.second << "\n";
-		cout << "Label: " << lbl << ", 이물질 위치: " << range.first << "~" << range.second << endl;
-    }
-    fout.close();
-
-    // ✅ 성능 출력
-    auto end = chrono::high_resolution_clock::now();
-    double elapsed = chrono::duration<double>(end - start).count();
-    cout << "\n실행 시간: " << elapsed << "초" << endl;
-    cout << "총 라벨 수: " << (newLabel - 1) << endl;
-    cout << "불량 좌표 저장 완료: defect_coordinates_excel.csv" << endl;
-    return 0;
+	auto end = chrono::high_resolution_clock::now();
+	cout << "총 실행 시간: " << chrono::duration<double>(end - start).count() << "초" << endl;
+	cout << "이물질 개수: " << blobs.size() << endl;
+	cout << "엑셀 파일 경로: C:/Users/SSAFY/Desktop/defect_coordinates_excel.csv" << endl;
+	return 0;
 }
