@@ -37,7 +37,7 @@ string toExcelColumn(int num) {
 }
 
 // ✅ 파일을 메모리 맵으로 매핑하여 읽기 전용 포인터 반환
-HANDLE mapFile(const string& path, char*& filedata, DWORD& filesize) {
+static HANDLE mapFile(const string& path, char*& filedata, DWORD& filesize) {
     HANDLE hFile = CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE) return nullptr;
     HANDLE hMap = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
@@ -48,7 +48,7 @@ HANDLE mapFile(const string& path, char*& filedata, DWORD& filesize) {
 }
 
 // ✅ mmap 파일로부터 줄 오프셋과 행/열 수 계산
-void computeOffsets(char* filedata, DWORD filesize, vector<size_t>& line_offsets, int& rows, int& cols) {
+static void computeOffsets(char* filedata, DWORD filesize, vector<size_t>& line_offsets, int& rows, int& cols) {
     line_offsets.push_back(0);
     for (DWORD i = 0; i < filesize; i++) {
         if (filedata[i] == '\n') line_offsets.push_back(i + 1);
@@ -62,7 +62,8 @@ void computeOffsets(char* filedata, DWORD filesize, vector<size_t>& line_offsets
 }
 
 // ✅ from_chars 기반 CSV 파싱 (병렬 수행)
-void parseCSV(float* flat, char* filedata, const vector<size_t>& line_offsets, int rows, int cols) {
+static void parseCSV(float* flat, char* filedata, const vector<size_t>& line_offsets, int rows, int cols) {
+    // OpenMP 병렬 루프
 #pragma omp parallel for schedule(dynamic)
     for (int y = 0; y < rows; y++) {
         const char* start = filedata + line_offsets[y];
@@ -85,7 +86,7 @@ void parseCSV(float* flat, char* filedata, const vector<size_t>& line_offsets, i
 }
 
 // ✅ AVX2 기반 이진화 수행
-void binarize(const float* flat, uint8_t* binary, int rows, int cols) {
+static void binarize(const float* flat, uint8_t* binary, int rows, int cols) {
 #pragma omp parallel for
     for (int y = 0; y < rows; y++) {
         int x = 0;
@@ -103,7 +104,7 @@ void binarize(const float* flat, uint8_t* binary, int rows, int cols) {
 }
 
 // ✅ DFS 기반 블롭 탐지
-vector<BlobInfo> detectBlobs(const uint8_t* binary, int rows, int cols) {
+static vector<BlobInfo> detectBlobs(const uint8_t* binary, int rows, int cols) {
     vector<BlobInfo> blobs;
     uint8_t* visited = new uint8_t[rows * cols]();
     int dx[] = { 1, -1, 0, 0 }, dy[] = { 0, 0, 1, -1 };
@@ -139,7 +140,7 @@ vector<BlobInfo> detectBlobs(const uint8_t* binary, int rows, int cols) {
 }
 
 // ✅ 블롭 위치 결과 콘솔 + CSV 파일 출력
-void outputBlobs(const vector<BlobInfo>& blobs, int cols, const string& path) {
+static void outputBlobs(const vector<BlobInfo>& blobs, int cols, const string& path) {
     float um_per_pixel_x = PCB_WIDTH_UM / cols;
     float um_per_pixel_y = PCB_HEIGHT_UM / blobs[0].maxY;
 
