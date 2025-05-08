@@ -78,7 +78,7 @@
                         Background="#FF0078D7"
                         BorderBrush="#FF0078D7"
                         FontSize="15"
-                        Command="{Binding LoginCommand}">
+                        Click="LoginButton_Click">
                     <Button.Style>
                         <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
                             <Setter Property="BorderThickness" Value="1"/>

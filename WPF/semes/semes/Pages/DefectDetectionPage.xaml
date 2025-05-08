@@ -55,7 +55,7 @@
             <Image Stretch="Uniform">
                 <Image.Style>
                     <Style TargetType="Image">
-                        <Setter Property="Source" Value="/semes;component/Resources/final_pcb_with_dies_and_defects6.tif"/>
+                        <Setter Property="Source" Value="/Resources/pcb_with_dies.tif"/>
                     </Style>
                 </Image.Style>
             </Image>

@@ -177,7 +177,7 @@
                 </Grid>
 
                 <!-- 달력 -->
-                <Calendar Margin="0,20,0,0"/>
+                <Calendar Margin="0,20,0,0" Language="ko"/>
             </StackPanel>
         </materialDesign:Card>
     </Grid>
