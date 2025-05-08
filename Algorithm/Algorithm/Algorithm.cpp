@@ -1,6 +1,4 @@
-﻿// ✅ 가독성 향상된 PCB 이물질 감지 코드 (함수 분리 + 주석 버전)
-
-#define _CRT_SECURE_NO_WARNINGS
+﻿#define _CRT_SECURE_NO_WARNINGS
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -15,200 +13,183 @@
 #include <iomanip>
 using namespace std;
 
-// === 상수 정의 ===
 constexpr float THRESHOLD = 2.5f;
 constexpr float PCB_WIDTH_UM = 240000.0f;
 constexpr float PCB_HEIGHT_UM = 77500.0f;
+constexpr float PCB_LENGTH_UM = 250000.0f;
 
-// === 블롭(이물질) 정보 구조체 ===
 struct BlobInfo {
-	int minX = INT_MAX, minY = INT_MAX, maxX = 0, maxY = 0;
+    int minX = INT_MAX, minY = INT_MAX, maxX = 0, maxY = 0;
 };
 
-// ✅ 숫자를 엑셀 열 이름으로 변환하는 함수 (1 → A, 27 → AA 등)
 static string toExcelColumn(int num) {
-	string col;
-	while (num > 0) {
-		num--;
-		col = char('A' + (num % 26)) + col;
-		num /= 26;
-	}
-	return col;
+    string col;
+    while (num > 0) {
+        num--;
+        col = char('A' + (num % 26)) + col;
+        num /= 26;
+    }
+    return col;
 }
 
-// ✅ 파일을 메모리 맵으로 매핑하여 읽기 전용 포인터 반환
 static HANDLE mapFile(const string& path, char*& filedata, DWORD& filesize) {
-	HANDLE hFile = CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (hFile == INVALID_HANDLE_VALUE) return nullptr;
-	HANDLE hMap = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
-	if (!hMap) return nullptr;
-	filedata = (char*)MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
-	filesize = GetFileSize(hFile, NULL);
-	return hMap;
+    HANDLE hFile = CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile == INVALID_HANDLE_VALUE) return nullptr;
+    HANDLE hMap = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
+    if (!hMap) return nullptr;
+    filedata = (char*)MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
+    filesize = GetFileSize(hFile, NULL);
+    return hMap;
 }
 
-// ✅ mmap 파일로부터 줄 오프셋과 행/열 수 계산
 static void computeOffsets(char* filedata, DWORD filesize, vector<size_t>& line_offsets, int& rows, int& cols) {
-	line_offsets.push_back(0);
-	for (DWORD i = 0; i < filesize; i++) {
-		if (filedata[i] == '\n') line_offsets.push_back(i + 1);
-	}
-	rows = line_offsets.size() - 1;
-	cols = 0;
-	for (DWORD i = line_offsets[0]; i < filesize && filedata[i] != '\n'; i++) {
-		if (filedata[i] == ',') cols++;
-	}
-	cols++;
+    line_offsets.push_back(0);
+    for (DWORD i = 0; i < filesize; i++) {
+        if (filedata[i] == '\n') line_offsets.push_back(i + 1);
+    }
+    rows = line_offsets.size() - 1;
+    cols = 0;
+    for (DWORD i = line_offsets[0]; i < filesize && filedata[i] != '\n'; i++) {
+        if (filedata[i] == ',') cols++;
+    }
+    cols++;
 }
 
-// ✅ from_chars 기반 CSV 파싱 (병렬 수행)
 static void parseCSV(float* flat, char* filedata, const vector<size_t>& line_offsets, int rows, int cols) {
-	// OpenMP 병렬 루프
 #pragma omp parallel for schedule(dynamic)
-	for (int y = 0; y < rows; y++) {
-		const char* start = filedata + line_offsets[y];
-		const char* end = filedata + (y + 1 < line_offsets.size() ? line_offsets[y + 1] : 0);
-		int x = 0;
-		while (start < end && x < cols) {
-			float val = 0;
-			auto [ptr, ec] = from_chars(start, end, val);
-			if (ec == errc()) {
-				flat[y * cols + x++] = val;
-				start = (*ptr == ',' || *ptr == '\n') ? ptr + 1 : ptr;
-			}
-			else {
-				flat[y * cols + x++] = 0.0f; // 잘못된 값은 0 처리
-				while (start < end && *start != ',' && *start != '\n') ++start;
-				start++;
-			}
-		}
-	}
+    for (int y = 0; y < rows; y++) {
+        const char* start = filedata + line_offsets[y];
+        const char* end = filedata + (y + 1 < line_offsets.size() ? line_offsets[y + 1] : 0);
+        int x = 0;
+        while (start < end && x < cols) {
+            float val = 0;
+            auto [ptr, ec] = from_chars(start, end, val);
+            if (ec == errc()) {
+                flat[y * cols + x++] = val;
+                start = (*ptr == ',' || *ptr == '\n') ? ptr + 1 : ptr;
+            } else {
+                flat[y * cols + x++] = 0.0f;
+                while (start < end && *start != ',' && *start != '\n') ++start;
+                start++;
+            }
+        }
+    }
 }
 
-// ✅ AVX2 기반 이진화 수행
 static void binarize(const float* flat, uint8_t* binary, int rows, int cols) {
 #pragma omp parallel for
-	for (int y = 0; y < rows; y++) {
-		int x = 0;
-		for (; x + 7 < cols; x += 8) {
-			__m256 vals = _mm256_loadu_ps(&flat[y * cols + x]);
-			__m256 thresh = _mm256_set1_ps(THRESHOLD);
-			__m256 result = _mm256_cmp_ps(vals, thresh, _CMP_GE_OS);
-			int mask = _mm256_movemask_ps(result);
-			for (int i = 0; i < 8; i++) binary[y * cols + x + i] = (mask >> i) & 1;
-		}
-		for (; x < cols; x++) {
-			binary[y * cols + x] = flat[y * cols + x] >= THRESHOLD;
-		}
-	}
+    for (int y = 0; y < rows; y++) {
+        int x = 0;
+        for (; x + 7 < cols; x += 8) {
+            __m256 vals = _mm256_loadu_ps(&flat[y * cols + x]);
+            __m256 thresh = _mm256_set1_ps(THRESHOLD);
+            __m256 result = _mm256_cmp_ps(vals, thresh, _CMP_GE_OS);
+            int mask = _mm256_movemask_ps(result);
+            for (int i = 0; i < 8; i++) binary[y * cols + x + i] = (mask >> i) & 1;
+        }
+        for (; x < cols; x++) {
+            binary[y * cols + x] = flat[y * cols + x] >= THRESHOLD;
+        }
+    }
 }
 
-// ✅ DFS 기반 블롭 탐지
 static vector<BlobInfo> detectBlobs(const uint8_t* binary, int rows, int cols) {
-	vector<BlobInfo> blobs;
-	uint8_t* visited = new uint8_t[rows * cols]();
-	int dx[] = { 1, -1, 0, 0 }, dy[] = { 0, 0, 1, -1 };
-	struct Coord { int y, x; };
+    vector<BlobInfo> blobs;
+    uint8_t* visited = new uint8_t[rows * cols]();
+    int dx[] = { 1, -1, 0, 0 }, dy[] = { 0, 0, 1, -1 };
+    struct Coord { int y, x; };
 
-	for (int y = 0; y < rows; y++) {
-		for (int x = 0; x < cols; x++) {
-			if (binary[y * cols + x] && !visited[y * cols + x]) {
-				blobs.emplace_back();
-				vector<Coord> stack = { {y, x} };
-				visited[y * cols + x] = 1;
-				while (!stack.empty()) {
-					Coord cur = stack.back(); stack.pop_back();
-					auto& blob = blobs.back();
-					blob.minY = min(blob.minY, cur.y); blob.maxY = max(blob.maxY, cur.y);
-					blob.minX = min(blob.minX, cur.x); blob.maxX = max(blob.maxX, cur.x);
-					for (int d = 0; d < 4; d++) {
-						int ny = cur.y + dy[d], nx = cur.x + dx[d];
-						if (ny >= 0 && ny < rows && nx >= 0 && nx < cols) {
-							int idx = ny * cols + nx;
-							if (binary[idx] && !visited[idx]) {
-								visited[idx] = 1;
-								stack.push_back({ ny, nx });
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	delete[] visited;
-	return blobs;
+    for (int y = 0; y < rows; y++) {
+        for (int x = 0; x < cols; x++) {
+            if (binary[y * cols + x] && !visited[y * cols + x]) {
+                blobs.emplace_back();
+                vector<Coord> stack = { {y, x} };
+                visited[y * cols + x] = 1;
+                while (!stack.empty()) {
+                    Coord cur = stack.back(); stack.pop_back();
+                    auto& blob = blobs.back();
+                    blob.minY = min(blob.minY, cur.y); blob.maxY = max(blob.maxY, cur.y);
+                    blob.minX = min(blob.minX, cur.x); blob.maxX = max(blob.maxX, cur.x);
+                    for (int d = 0; d < 4; d++) {
+                        int ny = cur.y + dy[d], nx = cur.x + dx[d];
+                        if (ny >= 0 && ny < rows && nx >= 0 && nx < cols) {
+                            int idx = ny * cols + nx;
+                            if (binary[idx] && !visited[idx]) {
+                                visited[idx] = 1;
+                                stack.push_back({ ny, nx });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    delete[] visited;
+    return blobs;
 }
 
-
-// ✅ 블롭 위치 결과 콘솔 + CSV 파일 출력
 static void outputBlobs(const vector<BlobInfo>& blobs, int cols, const string& path) {
-	float um_per_pixel_x = PCB_WIDTH_UM / cols;
-	float um_per_pixel_y = PCB_HEIGHT_UM / blobs[0].maxY;
+    float um_per_pixel_x = PCB_WIDTH_UM / static_cast<float>(cols);
+    float um_per_pixel_y = PCB_LENGTH_UM / 12000.0f;
 
-	ofstream fout(path);
-	fout << "Blob,ExcelRange\n";
-	int idx = 1;
-	for (const auto& b : blobs) {
-		string start = toExcelColumn(b.minX + 1) + to_string(b.minY + 1);
-		string end = toExcelColumn(b.maxX + 1) + to_string(b.maxY + 1);
-		fout << idx << "," << start << "-" << end << "\n";
+    ofstream fout(path);
+    fout << "Blob,ExcelRange\n";
+    int idx = 1;
+    for (const auto& b : blobs) {
+        string start = toExcelColumn(b.minX + 1) + to_string(b.minY + 1);
+        string end = toExcelColumn(b.maxX + 1) + to_string(b.maxY + 1);
+        fout << idx << "," << start << "-" << end << "\n";
 
-		// 콘솔 출력 추가 (엑셀 주소)
-		cout << "[Blob " << idx << "] Excel 위치: " << start << "-" << end << endl;
-		idx++;
-	}
-	fout.close();
+        cout << "[Blob " << idx << "] Excel 위치: " << start << "-" << end << endl;
+        idx++;
+    }
+    fout.close();
 
-	// ✅ 콘솔에 mm 단위 정보만 출력
-	cout << "[이물질 위치]" << endl;
-	idx = 1;
-	for (const auto& b : blobs) {
-		float x1_mm = (b.minX * um_per_pixel_x) / 1000.0f;
-		float y1_mm = (b.minY * um_per_pixel_y) / 1000.0f;
-		float x2_mm = (b.maxX * um_per_pixel_x) / 1000.0f;
-		float y2_mm = (b.maxY * um_per_pixel_y) / 1000.0f;
-		float avg_x = (x1_mm + x2_mm) / 2.0f;
-		float avg_y = (y1_mm + y2_mm) / 2.0f;
+    cout << "[이물질 위치]" << endl;
+    idx = 1;
+    for (const auto& b : blobs) {
+        float x1_mm = (b.minX * um_per_pixel_x) / 1000.0f;
+        float y1_mm = (b.minY * um_per_pixel_y) / 1000.0f;
+        float x2_mm = (b.maxX * um_per_pixel_x) / 1000.0f;
+        float y2_mm = (b.maxY * um_per_pixel_y) / 1000.0f;
+        float avg_x = (x1_mm + x2_mm) / 2.0f;
+        float avg_y = (y1_mm + y2_mm) / 2.0f;
 
-		cout << fixed << setprecision(3);
-		cout << "Blob: " << idx++ << endl;
-		cout << "시작 끝: " << y1_mm << "mm " << x1_mm << "mm " << y2_mm << "mm " << x2_mm << "mm" << endl;
-		cout << "이물질 위치: X: " << avg_x << "mm, Y: " << avg_y << "mm" << endl;
-	}
+        cout << fixed << setprecision(3);
+        cout << "Blob: " << idx++ << endl;
+        cout << "시작 끝: " << y1_mm << "mm " << x1_mm << "mm ~ " << y2_mm << "mm " << x2_mm << "mm" << endl;
+        cout << "이물질 위치: X: " << avg_x << "mm, Y: " << avg_y << "mm" << endl;
+    }
 }
 
 int main() {
-	cout << "[PCB 이물질 감지 시작]\n";
-	auto start = chrono::high_resolution_clock::now();
-	// ✅ mmap 파일 열기
-	char* filedata = nullptr;
-	DWORD filesize = 0;
-	HANDLE hMap = mapFile("C:/Users/SSAFY/Desktop/final_pcb_with_dies_and_defects3.csv", filedata, filesize);
-	if (!hMap || !filedata) return -1;
+    cout << "[PCB 이물질 감지 시작]\n";
+    auto start = chrono::high_resolution_clock::now();
 
-	// ✅ 행/열 정보 및 줄 오프셋 계산
-	vector<size_t> line_offsets;
-	int rows = 0, cols = 0;
-	computeOffsets(filedata, filesize, line_offsets, rows, cols);
+    char* filedata = nullptr;
+    DWORD filesize = 0;
+    HANDLE hMap = mapFile("C:/Users/SSAFY/Desktop/final_pcb_with_dies_and_defects3.csv", filedata, filesize);
+    if (!hMap || !filedata) return -1;
 
-	// ✅ 파싱 및 이진화
-	float* flat = new float[rows * cols];
-	parseCSV(flat, filedata, line_offsets, rows, cols);
-	uint8_t* binary = new uint8_t[rows * cols];
-	binarize(flat, binary, rows, cols);
-	delete[] flat;
+    vector<size_t> line_offsets;
+    int rows = 0, cols = 0;
+    computeOffsets(filedata, filesize, line_offsets, rows, cols);
 
-	// ✅ DFS 탐지 시간 측정
-	vector<BlobInfo> blobs = detectBlobs(binary, rows, cols);
-	auto end = chrono::high_resolution_clock::now();
-	delete[] binary;
+    float* flat = new float[rows * cols];
+    parseCSV(flat, filedata, line_offsets, rows, cols);
+    uint8_t* binary = new uint8_t[rows * cols];
+    binarize(flat, binary, rows, cols);
+    delete[] flat;
 
-	// ✅ 출력
-	outputBlobs(blobs, cols, "C:/Users/SSAFY/Desktop/defect_coordinates_excel.csv");
-	cout << "총 실행 시간: " << chrono::duration<double>(end - start).count() << "초" << endl;
-	cout << "이물질 개수: " << blobs.size() << endl;
+    vector<BlobInfo> blobs = detectBlobs(binary, rows, cols);
+    auto end = chrono::high_resolution_clock::now();
+    delete[] binary;
 
-	UnmapViewOfFile(filedata);
-	CloseHandle(hMap);
-	return 0;
+    outputBlobs(blobs, cols, "C:/Users/SSAFY/Desktop/defect_coordinates_excel.csv");
+    cout << "총 실행 시간: " << chrono::duration<double>(end - start).count() << "초" << endl;
+    cout << "이물질 개수: " << blobs.size() << endl;
+
+    UnmapViewOfFile(filedata);
+    CloseHandle(hMap);
+    return 0;
 }
