@@ -98,6 +98,15 @@ static void binarize(const float* flat, uint8_t* binary, int rows, int cols) {
             binary[y * cols + x] = flat[y * cols + x] >= THRESHOLD;
         }
     }
+
+    // ✅ 가감속 구간 제거 (X축 기준: 좌우 240픽셀 제거)
+#pragma omp parallel for
+    for (int y = 0; y < rows; y++) {
+        for (int x = 0; x < 240; x++) {
+            binary[y * cols + x] = 0;               //좌
+            binary[y * cols + (cols - 1 - x)] = 0;  //우
+        }
+    }
 }
 
 // ✅ DFS 기반 블롭 탐지
