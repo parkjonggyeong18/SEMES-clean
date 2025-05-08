@@ -142,9 +142,8 @@ static vector<BlobInfo> detectBlobs(const uint8_t* binary, int rows, int cols) {
 }
 
 static void outputBlobs(const vector<BlobInfo>& blobs, int cols,int rows, const string& path) {
-    float um_per_pixel_x = PCB_WIDTH_UM / static_cast<float>(cols);
-    float um_per_pixel_y = PCB_HEIGHT_UM / static_cast<float>(rows); // 실제 Y축 해상도
-
+    float um_per_pixel_x = PCB_LENGTH_UM / static_cast<float>(cols);
+    float um_per_pixel_y = PCB_HEIGHT_UM / static_cast<float>(rows);
     ofstream fout(path);
     fout << "Blob,ExcelRange\n";
     int idx = 1;
