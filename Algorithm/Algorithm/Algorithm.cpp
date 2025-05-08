@@ -103,8 +103,8 @@ static void binarize(const float* flat, uint8_t* binary, int rows, int cols) {
 #pragma omp parallel for
     for (int y = 0; y < rows; y++) {
         for (int x = 0; x < 240; x++) {
-            binary[y * cols + x] = 0;            
-            binary[y * cols + (cols - 1 - x)] = 0;
+            binary[y * cols + x] = 0;               //좌
+            binary[y * cols + (cols - 1 - x)] = 0;  //우
         }
     }
 }
