@@ -13,11 +13,10 @@
 #include <iomanip>
 using namespace std;
 
-// === 상수 정의 ===
 constexpr float THRESHOLD = 2.5f;
 constexpr float PCB_WIDTH_UM = 240000.0f;
 constexpr float PCB_HEIGHT_UM = 77500.0f;
-constexpr float PCB_LENGTH_UM = 250000.0f; // 전체 스캔 길이 (여유 포함)
+constexpr float PCB_LENGTH_UM = 250000.0f;
 
 struct BlobInfo {
     int minX = INT_MAX, minY = INT_MAX, maxX = 0, maxY = 0;
@@ -93,43 +92,58 @@ static void binarize(const float* flat, uint8_t* binary, int rows, int cols) {
             binary[y * cols + x] = flat[y * cols + x] >= THRESHOLD;
         }
     }
-
-    // ✅ 가감속 구간 제거 (X축 기준: 좌우 240픽셀 제거)
 #pragma omp parallel for
     for (int y = 0; y < rows; y++) {
         for (int x = 0; x < 240; x++) {
-            binary[y * cols + x] = 0;                      // 좌측
-            binary[y * cols + (cols - 1 - x)] = 0;         // 우측
+            binary[y * cols + x] = 0;
+            binary[y * cols + (cols - 1 - x)] = 0;
         }
     }
 }
 
-static vector<BlobInfo> detectBlobs(const uint8_t* binary, int rows, int cols) {
+static int estimateDefectCount(const uint8_t* bin, int rows, int cols) {
+    int total = 0;
+#pragma omp parallel for reduction(+:total)
+    for (int i = 0; i < rows * cols; ++i) {
+        total += bin[i];
+    }
+    return total; // 실제로 활성화된 픽셀 수 반환
+}
+
+static vector<BlobInfo> detectBlobsAdaptive(const uint8_t* bin, int rows, int cols);
+
+static vector<BlobInfo> detectBlobsDFS(const uint8_t* binary, int rows, int cols) {
+	cout << "[DFS 탐색 시작]" << endl;
     vector<BlobInfo> blobs;
-    uint8_t* visited = new uint8_t[rows * cols]();
-    int dx[] = { 1, -1, 0, 0 }, dy[] = { 0, 0, 1, -1 };
+    const int MAX_STACK = 32768;
     struct Coord { int y, x; };
+    Coord* stack = new Coord[MAX_STACK];
+    uint8_t* visited = new uint8_t[rows * cols]();
+    int dx[4] = { 1, -1, 0, 0 }, dy[4] = { 0, 0, 1, -1 };
 
     for (int y = 0; y < rows; y++) {
         for (int x = 0; x < cols; x++) {
-            if (binary[y * cols + x] && !visited[y * cols + x]) {
+            int idx = y * cols + x;
+            if (binary[idx] && !visited[idx]) {
                 blobs.emplace_back();
-                vector<Coord> stack;
-                stack.reserve(8192);
-                stack.push_back({ y, x });
-                visited[y * cols + x] = 1;
-                while (!stack.empty()) {
-                    Coord cur = stack.back(); stack.pop_back();
-                    auto& blob = blobs.back();
+                auto& blob = blobs.back();
+                int top = 0;
+                stack[top++] = { y, x };
+                visited[idx] = 1;
+
+                while (top > 0) {
+                    Coord cur = stack[--top];
                     blob.minY = min(blob.minY, cur.y); blob.maxY = max(blob.maxY, cur.y);
                     blob.minX = min(blob.minX, cur.x); blob.maxX = max(blob.maxX, cur.x);
+
                     for (int d = 0; d < 4; d++) {
                         int ny = cur.y + dy[d], nx = cur.x + dx[d];
                         if (ny >= 0 && ny < rows && nx >= 0 && nx < cols) {
-                            int idx = ny * cols + nx;
-                            if (binary[idx] && !visited[idx]) {
-                                visited[idx] = 1;
-                                stack.push_back({ ny, nx });
+                            int nidx = ny * cols + nx;
+                            if (binary[nidx] && !visited[nidx]) {
+                                visited[nidx] = 1;
+                                if (top < MAX_STACK)
+                                    stack[top++] = { ny, nx };
                             }
                         }
                     }
@@ -137,13 +151,69 @@ static vector<BlobInfo> detectBlobs(const uint8_t* binary, int rows, int cols) {
             }
         }
     }
+    delete[] stack;
     delete[] visited;
     return blobs;
 }
 
-static void outputBlobs(const vector<BlobInfo>& blobs, int cols,int rows, const string& path) {
+static vector<BlobInfo> detectBlobsBFS(const uint8_t* bin, int rows, int cols) {
+	cout << "[BFS 탐색 시작]" << endl;
+    vector<BlobInfo> blobs;
+    vector<uint8_t> vis(rows * cols, 0);
+    int dx[4] = { 1, -1, 0, 0 }, dy[4] = { 0, 0, 1, -1 };
+    struct P { int y, x; };
+
+    P* queue = new P[rows * cols];
+    size_t qsize = 0, head = 0;
+
+    for (int y = 0; y < rows; ++y) {
+        for (int x = 0; x < cols; ++x) {
+            int idx = y * cols + x;
+            if (bin[idx] && !vis[idx]) {
+                blobs.emplace_back();
+                auto& B = blobs.back();
+                qsize = 0; head = 0;
+                queue[qsize++] = { y, x };
+                vis[idx] = 1;
+
+                while (head < qsize) {
+                    P cur = queue[head++];
+                    int cy = cur.y, cx = cur.x;
+                    B.minY = min(B.minY, cy); B.maxY = max(B.maxY, cy);
+                    B.minX = min(B.minX, cx); B.maxX = max(B.maxX, cx);
+
+                    for (int d = 0; d < 4; ++d) {
+                        int ny = cy + dy[d], nx = cx + dx[d];
+                        if (ny >= 0 && ny < rows && nx >= 0 && nx < cols) {
+                            int nidx = ny * cols + nx;
+                            if (bin[nidx] && !vis[nidx]) {
+                                vis[nidx] = 1;
+                                queue[qsize++] = { ny, nx };
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    delete[] queue;
+    return blobs;
+}
+
+static vector<BlobInfo> detectBlobsAdaptive(const uint8_t* bin, int rows, int cols) {
+    int estimate = estimateDefectCount(bin, rows, cols);
+    cout << "[DEBUG] 추정 blob 수: " << estimate << endl;
+
+    if (estimate < 70000)
+        return detectBlobsDFS(bin, rows, cols);
+    else
+        return detectBlobsBFS(bin, rows, cols);
+}
+
+static void outputBlobs(const vector<BlobInfo>& blobs, int cols, int rows, const string& path) {
     float um_per_pixel_x = PCB_LENGTH_UM / static_cast<float>(cols);
-    float um_per_pixel_y = PCB_HEIGHT_UM / static_cast<float>(rows); 
+    float um_per_pixel_y = PCB_HEIGHT_UM / static_cast<float>(rows);
     ofstream fout(path);
     fout << "Blob,ExcelRange\n";
     int idx = 1;
@@ -179,7 +249,7 @@ int main() {
 
     char* filedata = nullptr;
     DWORD filesize = 0;
-    HANDLE hMap = mapFile("C:/Users/SSAFY/Desktop/final_pcb_with_dies_and_defects3.csv", filedata, filesize);
+    HANDLE hMap = mapFile("C:/Users/SSAFY/Desktop/final_pcb_with_dies_and_defects2.csv", filedata, filesize);
     if (!hMap || !filedata) return -1;
 
     vector<size_t> line_offsets;
@@ -193,13 +263,17 @@ int main() {
     binarize(flat, binary, rows, cols);
     delete[] flat;
 
-    vector<BlobInfo> blobs = detectBlobs(binary, rows, cols);
+    auto start2 = chrono::high_resolution_clock::now();
+    vector<BlobInfo> blobs = detectBlobsAdaptive(binary, rows, cols);
     auto end = chrono::high_resolution_clock::now();
     delete[] binary;
 
-    outputBlobs(blobs, cols,rows, "C:/Users/SSAFY/Desktop/defect_coordinates_excel.csv");
+    outputBlobs(blobs, cols, rows, "C:/Users/SSAFY/Desktop/defect_coordinates_excel.csv");
+
     cout << "총 실행 시간: " << chrono::duration<double>(end - start).count() << "초" << endl;
+    cout << "Blob 탐색 시간: " << chrono::duration<double>(end - start2).count() << "초" << endl;
     cout << "이물질 개수: " << blobs.size() << endl;
+
     UnmapViewOfFile(filedata);
     CloseHandle(hMap);
     return 0;
