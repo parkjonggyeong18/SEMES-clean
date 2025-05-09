@@ -147,7 +147,8 @@
                                Margin="0,16,0,8"/>
 
                     <Calendar x:Name="DefectCalendar" 
-                              SelectedDatesChanged="DefectCalendar_SelectedDatesChanged"/>
+                              SelectedDatesChanged="DefectCalendar_SelectedDatesChanged"
+                              Language="ko"/>
 
                     <!-- 추가 필터 옵션 -->
                     <Expander Header="상세 필터" Margin="0,16,0,0">
