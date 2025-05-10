@@ -113,7 +113,7 @@ static int estimateDefectCount(const uint8_t* bin, int rows, int cols) {
 static vector<BlobInfo> detectBlobsAdaptive(const uint8_t* bin, int rows, int cols);
 
 static vector<BlobInfo> detectBlobsDFS(const uint8_t* binary, int rows, int cols) {
-	cout << "[DFS 탐색 시작]" << endl;
+    cout << "[DFS 탐색 시작]" << endl;
     vector<BlobInfo> blobs;
     const int MAX_STACK = 32768;
     struct Coord { int y, x; };
@@ -157,7 +157,7 @@ static vector<BlobInfo> detectBlobsDFS(const uint8_t* binary, int rows, int cols
 }
 
 static vector<BlobInfo> detectBlobsBFS(const uint8_t* bin, int rows, int cols) {
-	cout << "[BFS 탐색 시작]" << endl;
+    cout << "[BFS 탐색 시작]" << endl;
     vector<BlobInfo> blobs;
     vector<uint8_t> vis(rows * cols, 0);
     int dx[4] = { 1, -1, 0, 0 }, dy[4] = { 0, 0, 1, -1 };
