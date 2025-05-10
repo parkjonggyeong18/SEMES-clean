@@ -11,6 +11,8 @@
 #include <charconv>
 #include <climits>
 #include <iomanip>
+#include <algorithm>
+#include <numeric>
 using namespace std;
 
 constexpr float THRESHOLD = 2.5f;
@@ -20,6 +22,11 @@ constexpr float PCB_LENGTH_UM = 250000.0f;
 
 struct BlobInfo {
     int minX = INT_MAX, minY = INT_MAX, maxX = 0, maxY = 0;
+};
+
+// 평면 피팅을 위한 구조체
+struct PlaneCoeffs {
+    float a, b, c; // z = ax + by + c
 };
 
 static string toExcelColumn(int num) {
@@ -77,6 +84,100 @@ static void parseCSV(float* flat, char* filedata, const vector<size_t>& line_off
     }
 }
 
+// 평면 피팅을 통한 기울기 보정 함수
+static PlaneCoeffs fitPlane(const float* data, int rows, int cols) {
+    cout << "[평면 피팅 시작]" << endl;
+
+    // DI 영역을 제외한 유효 데이터 포인트 수집
+    vector<float> x_vals, y_vals, z_vals;
+    x_vals.reserve(rows * (cols - 480));
+    y_vals.reserve(rows * (cols - 480));
+    z_vals.reserve(rows * (cols - 480));
+
+    for (int y = 0; y < rows; y++) {
+        for (int x = 240; x < cols - 240; x++) {
+            float z = data[y * cols + x];
+            if (z > 0.1f) { // 유효한 데이터만 사용
+                x_vals.push_back(static_cast<float>(x));
+                y_vals.push_back(static_cast<float>(y));
+                z_vals.push_back(z);
+            }
+        }
+    }
+
+    // 데이터 포인트가 충분하지 않으면 기본값 반환
+    if (x_vals.size() < 10) {
+        cout << "[경고] 유효 데이터 포인트가 부족합니다." << endl;
+        return { 0.0f, 0.0f, 0.0f };
+    }
+
+    // 평균 계산
+    float mean_x = accumulate(x_vals.begin(), x_vals.end(), 0.0f) / x_vals.size();
+    float mean_y = accumulate(y_vals.begin(), y_vals.end(), 0.0f) / y_vals.size();
+    float mean_z = accumulate(z_vals.begin(), z_vals.end(), 0.0f) / z_vals.size();
+
+    // 최소 제곱법을 사용한 평면 피팅 (z = ax + by + c)
+    float sum_xx = 0.0f, sum_xy = 0.0f, sum_xz = 0.0f;
+    float sum_yy = 0.0f, sum_yz = 0.0f;
+
+    for (size_t i = 0; i < x_vals.size(); i++) {
+        float x_centered = x_vals[i] - mean_x;
+        float y_centered = y_vals[i] - mean_y;
+        float z_centered = z_vals[i] - mean_z;
+
+        sum_xx += x_centered * x_centered;
+        sum_xy += x_centered * y_centered;
+        sum_xz += x_centered * z_centered;
+        sum_yy += y_centered * y_centered;
+        sum_yz += y_centered * z_centered;
+    }
+
+    // 연립방정식 해결
+    float det = sum_xx * sum_yy - sum_xy * sum_xy;
+    if (fabs(det) < 1e-6f) {
+        cout << "[경고] 행렬식이 0에 가깝습니다. 평면 피팅 실패." << endl;
+        return { 0.0f, 0.0f, 0.0f };
+    }
+
+    float a = (sum_xz * sum_yy - sum_xy * sum_yz) / det;
+    float b = (sum_xx * sum_yz - sum_xy * sum_xz) / det;
+    float c = mean_z - a * mean_x - b * mean_y;
+
+    cout << "[평면 피팅 결과] z = " << a << "x + " << b << "y + " << c << endl;
+    return { a, b, c };
+}
+
+// 데이터 평탄화 함수
+static void flattenData(float* data, int rows, int cols) {
+    cout << "[데이터 평탄화 시작]" << endl;
+
+    // 평면 피팅
+    PlaneCoeffs plane = fitPlane(data, rows, cols);
+
+    // 기울기가 거의 없으면 평탄화 생략
+    if (fabs(plane.a) < 1e-5f && fabs(plane.b) < 1e-5f) {
+        cout << "[정보] 데이터가 이미 평탄합니다. 평탄화 생략." << endl;
+        return;
+    }
+
+    // 데이터 평탄화 (기울기 보정)
+#pragma omp parallel for
+    for (int y = 0; y < rows; y++) {
+        for (int x = 0; x < cols; x++) {
+            int idx = y * cols + x;
+            if (data[idx] > 0.1f) { // 유효한 데이터만 보정
+                // 평면 방정식에 따른 예상 높이 계산
+                float expected_z = plane.a * x + plane.b * y + plane.c;
+                // 기울기 보정
+                data[idx] -= expected_z - plane.c;
+            }
+        }
+    }
+
+    cout << "[데이터 평탄화 완료]" << endl;
+}
+
+// 적응형 임계값을 적용한 이진화 함수
 static void binarize(const float* flat, uint8_t* binary, int rows, int cols) {
 #pragma omp parallel for
     for (int y = 0; y < rows; y++) {
@@ -101,6 +202,8 @@ static void binarize(const float* flat, uint8_t* binary, int rows, int cols) {
     }
 }
 
+
+
 static int estimateDefectCount(const uint8_t* bin, int rows, int cols) {
     int total = 0;
 #pragma omp parallel for reduction(+:total)
@@ -109,8 +212,6 @@ static int estimateDefectCount(const uint8_t* bin, int rows, int cols) {
     }
     return total; // 실제로 활성화된 픽셀 수 반환
 }
-
-static vector<BlobInfo> detectBlobsAdaptive(const uint8_t* bin, int rows, int cols);
 
 static vector<BlobInfo> detectBlobsDFS(const uint8_t* binary, int rows, int cols) {
     cout << "[DFS 탐색 시작]" << endl;
@@ -196,7 +297,6 @@ static vector<BlobInfo> detectBlobsBFS(const uint8_t* bin, int rows, int cols) {
             }
         }
     }
-
     delete[] queue;
     return blobs;
 }
@@ -249,7 +349,7 @@ int main() {
 
     char* filedata = nullptr;
     DWORD filesize = 0;
-    HANDLE hMap = mapFile("C:/Users/SSAFY/Desktop/final_pcb_with_dies_and_defects2.csv", filedata, filesize);
+    HANDLE hMap = mapFile("C:/Users/SSAFY/Desktop/final_pcb_with_dies_and_defects3.csv", filedata, filesize);
     if (!hMap || !filedata) return -1;
 
     vector<size_t> line_offsets;
@@ -258,6 +358,9 @@ int main() {
 
     float* flat = new float[rows * cols];
     parseCSV(flat, filedata, line_offsets, rows, cols);
+
+    // 데이터 평탄화 적용
+    flattenData(flat, rows, cols);
 
     uint8_t* binary = new uint8_t[rows * cols];
     binarize(flat, binary, rows, cols);
