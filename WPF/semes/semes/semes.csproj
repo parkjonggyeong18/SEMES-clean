@@ -11,6 +11,7 @@
   <ItemGroup>
     <None Remove="Resources\final_pcb_with_dies_and_defects6.tif" />
     <None Remove="Resources\pcb_with_dies.tif" />
+    <None Remove="Resources\semes_comp.png" />
     <None Remove="Resources\semes_logo.png" />
   </ItemGroup>
 
@@ -23,6 +24,7 @@
   <ItemGroup>
     <Resource Include="Resources\final_pcb_with_dies_and_defects6.tif" />
     <Resource Include="Resources\pcb_with_dies.tif" />
+    <Resource Include="Resources\semes_comp.png" />
     <Resource Include="Resources\semes_logo.png" />
   </ItemGroup>
 

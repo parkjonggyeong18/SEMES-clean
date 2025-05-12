@@ -6,27 +6,42 @@ using semes.Features.Auth.Views;
 
 namespace semes
 {
-    // <summary>
-    // Interaction logic for App.xaml
-    // </summary>
+    /// <summary>
+    /// Interaction logic for App.xaml
+    /// </summary>
     public partial class App : Application
     {
         public static Frame MainFrame { get; set; }
+        public static MainWindow MainWindowInstance { get; set; }
+
         private void Application_Startup(object sender, StartupEventArgs e)
         {
             // 로그인 안되있으면 Login페이지로 로딩 하는 로직필요
-            MainWindow mainWindow = new MainWindow();
-            Current.MainWindow = mainWindow;
-            mainWindow.Show();
 
-            MainFrame = mainWindow.MainFrame;
+            // 메인 윈도우 생성만 하고 표시하지 않음 (숨김)
+            MainWindowInstance = new MainWindow();
+            MainFrame = MainWindowInstance.MainFrame;
 
-            MainFrame.Navigate(new LoginPage());
+            // 버튼들 비활성화
+            MainWindowInstance.btnDashboard.IsEnabled = false;
+            MainWindowInstance.btnDefectDetection.IsEnabled = false;
+            MainWindowInstance.btnDefectStats.IsEnabled = false;
 
-            //mainWindow.btnDashboard. // TODO 클릭안되게 막아야함
-            mainWindow.btnDashboard.IsEnabled = false;
-            mainWindow.btnDefectDetection.IsEnabled = false;
-            mainWindow.btnDefectStats.IsEnabled = false;
-         }
+            // 로그인 창을 별도 Window로 생성
+            var loginWindow = new Window
+            {
+                Content = new LoginPage(),
+                Title = "로그인",
+                Width = 450,
+                Height = 500,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                ResizeMode = ResizeMode.NoResize,
+                WindowStyle = WindowStyle.SingleBorderWindow
+            };
+
+            // 로그인 창만 표시
+            Current.MainWindow = loginWindow;
+            loginWindow.Show();
+        }
     }
 }
