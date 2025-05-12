@@ -63,7 +63,7 @@ for iy in range(num_die_y):
 
 # ==== 불량 생성 함수 (높이 보장) ====
 def add_rectangular_defects(zmap, mask_die, num_defects=20,
-                            min_size_px=10, max_size_px=30,
+                            min_size_px=10, max_size_px=1000,
                             min_height_um=0.6, max_height_um=1.0):
     rows, cols = zmap.shape
     defects = []
@@ -87,7 +87,7 @@ def add_rectangular_defects(zmap, mask_die, num_defects=20,
     return defects
 
 # ==== 불량 생성 ====
-defect_boxes = add_rectangular_defects(zmap, mask_die, num_defects=20)
+defect_boxes = add_rectangular_defects(zmap, mask_die, num_defects=1000)
 
 # ==== TIF 저장 ====
 zmap_min = np.min(zmap)
