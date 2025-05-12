@@ -48,23 +48,23 @@ namespace semes.Features.Auth.Views
                 loginWindow.Close();
 
                 // Welcome 창 표시
-                var welcomeWindow = new WelcomeWindow(currentUser);
+                WelcomeWindow welcomeWindow = new WelcomeWindow(currentUser);
 
                 // Welcome 창이 닫힐 때 메인 윈도우 표시
                 welcomeWindow.Closed += (s, args) =>
                 {
-                    mainWindow.CurrentUser = currentUser;
+                    // App.MainWindowInstance를 직접 사용하고 설정
+                    App.MainWindowInstance.CurrentUser = currentUser;
+                    App.MainWindowInstance.btnDashboard.IsEnabled = true;
+                    App.MainWindowInstance.btnDefectDetection.IsEnabled = true;
+                    App.MainWindowInstance.btnDefectStats.IsEnabled = true;
+                    App.MainWindowInstance.btnCommunity.IsEnabled = true;
 
-                    mainWindow.btnDashboard.IsEnabled = true;
-                    mainWindow.btnDefectDetection.IsEnabled = true;
-                    mainWindow.btnDefectStats.IsEnabled = true;
-                    mainWindow.btnCommunity.IsEnabled = true;
-
+                    // 관리자 권한 확인
                     if (_authService.UserRole == "ADMIN")
                     {
-                        mainWindow.btnUserManagement.Visibility = Visibility.Visible;
+                        App.MainWindowInstance.btnUserManagement.Visibility = Visibility.Visible;
                     }
-                }   
 
                     // 메인 윈도우 표시
                     Application.Current.MainWindow = App.MainWindowInstance;
