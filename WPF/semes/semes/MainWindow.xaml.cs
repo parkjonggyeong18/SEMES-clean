@@ -1,18 +1,40 @@
-﻿using System.Windows;
+﻿using System.ComponentModel;
+using System.Windows;
 using System.Windows.Controls;
+using semes.Pages;
 
 namespace semes
 {
     /// <summary>
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, INotifyPropertyChanged
     {
+        private string _currentUser;
+        public string CurrentUser
+        {
+            get => _currentUser;
+            set
+            {
+                if (_currentUser != value)
+                {
+                    _currentUser = value;
+                    OnPropertyChanged(nameof(CurrentUser));
+                }
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
         public MainWindow()
         {
             InitializeComponent();
 
-            // 초기 페이지로 대시보드 로드
             MainFrame.Navigate(new DashboardPage());
             SetActiveButton(btnDashboard);
         }
@@ -35,15 +57,26 @@ namespace semes
             SetActiveButton(btnDefectStats);
         }
 
-        // 활성화된 버튼 스타일 적용
+        private void btnCommunity_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(new CommunityPage(CurrentUser));
+            SetActiveButton(btnCommunity);
+        }
+
+        private void btnUserManagement_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(new UserManagementPage());
+            SetActiveButton(btnUserManagement);
+        }
+
         private void SetActiveButton(Button activeButton)
         {
-            // 모든 버튼 초기화
             btnDashboard.Background = System.Windows.Media.Brushes.Transparent;
             btnDefectDetection.Background = System.Windows.Media.Brushes.Transparent;
             btnDefectStats.Background = System.Windows.Media.Brushes.Transparent;
+            btnUserManagement.Background = System.Windows.Media.Brushes.Transparent;
+            btnCommunity.Background = System.Windows.Media.Brushes.Transparent;
 
-            // 활성화된 버튼 스타일 적용
             activeButton.Background = (System.Windows.Media.Brush)FindResource("MaterialDesignPaper");
         }
     }

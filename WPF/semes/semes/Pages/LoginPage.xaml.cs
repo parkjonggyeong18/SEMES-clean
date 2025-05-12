@@ -53,10 +53,18 @@ namespace semes.Features.Auth.Views
                 // Welcome 창이 닫힐 때 메인 윈도우 표시
                 welcomeWindow.Closed += (s, args) =>
                 {
-                    // 메인 윈도우 활성화
-                    App.MainWindowInstance.btnDashboard.IsEnabled = true;
-                    App.MainWindowInstance.btnDefectDetection.IsEnabled = true;
-                    App.MainWindowInstance.btnDefectStats.IsEnabled = true;
+                    mainWindow.CurrentUser = currentUser;
+
+                    mainWindow.btnDashboard.IsEnabled = true;
+                    mainWindow.btnDefectDetection.IsEnabled = true;
+                    mainWindow.btnDefectStats.IsEnabled = true;
+                    mainWindow.btnCommunity.IsEnabled = true;
+
+                    if (_authService.UserRole == "ADMIN")
+                    {
+                        mainWindow.btnUserManagement.Visibility = Visibility.Visible;
+                    }
+                }   
 
                     // 메인 윈도우 표시
                     Application.Current.MainWindow = App.MainWindowInstance;

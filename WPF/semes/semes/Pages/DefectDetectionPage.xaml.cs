@@ -1,12 +1,18 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Printing;
+using System.Text.RegularExpressions;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Xml;
+using System.Xml.Serialization;
+using System.IO;
 
 namespace semes
 {
@@ -130,7 +136,10 @@ namespace semes
 
             double displayX = defect.X * scaleX;
             double displayY = defect.Y * scaleY;
-            double displaySize = Math.Max(defect.Width * scaleX, 10);
+
+            // 크기에 따라 표시 크기 조정
+            double sizeMultiplier = 0.5;
+            double displaySize = Math.Max(defect.Width * sizeMultiplier, 10);
 
             // 불량 마커 생성
             Ellipse marker = new Ellipse
@@ -172,19 +181,172 @@ namespace semes
         }
         #endregion
 
-        #region 클릭 이벤트 리스너
+        #region 불량검출 클릭 이벤트 리스너
         private void DefectBtn_Click(object sender, RoutedEventArgs e)
         {
-            CreateSampleDefects();
+            string exePath = "C:\\Users\\SSAFY\\source\\repos\\Project4\\x64\\Release\\Project4.exe"; // 기본 경로 수정 필요
+
+            // 알고리즘 실행 및 결과 파싱
+            List<DefectItem> items = RunDefectDetectionAndParseOutput(exePath);
+
+            // 기존 불량 항목 초기화
+            defectItems.Clear();
+
+            // 파싱된 불량 항목 추가
+            foreach (var item in items)
+            {
+                defectItems.Add(item);
+            }
+
+            // [추가] 원점(0,0) 테스트용 불량 항목
+            //defectItems.Add(new DefectItem
+            //{
+            //    Id = 999,
+            //    X = 0,
+            //    Y = 0,
+            //    Width = 50,
+            //    Height = 50
+            //});
         }
+        #endregion
+
+        #region 알고리즘(exe) 실행 후 출력되는 XML 로그를 파싱하는 함수
+        private List<DefectItem> RunDefectDetectionAndParseOutput(string exePath, string arguments = "")
+        {
+            List<DefectItem> defectItems = new List<DefectItem>();
+            StringBuilder logBuilder = new StringBuilder();
+
+            try
+            {
+                // 외부 프로세스(exe) 실행 설정
+                ProcessStartInfo startInfo = new ProcessStartInfo
+                {
+                    FileName = exePath,
+                    Arguments = arguments,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = false  // 콘솔 창을 보이게 할 경우 false, 숨길 경우 true
+                };
+
+                // 프로세스 실행 및 출력 캡처
+                using (Process process = Process.Start(startInfo))
+                {
+                    // 표준 출력을 실시간으로 읽어서 StringBuilder에 저장
+                    while (!process.StandardOutput.EndOfStream)
+                    {
+                        string line = process.StandardOutput.ReadLine();
+                        logBuilder.AppendLine(line);
+                        Console.WriteLine(line);  // 디버깅용 - C# 콘솔에도 같은 내용 출력
+                    }
+
+                    process.WaitForExit();
+                }
+
+                // 캡처된 로그에서 <DefectItem> 태그 추출
+                string logContent = logBuilder.ToString();
+                string pattern = @"<DefectItem>[\s\S]*?<\/DefectItem>";
+                MatchCollection matches = Regex.Matches(logContent, pattern, RegexOptions.Singleline);
+
+                foreach (Match match in matches)
+                {
+                    try
+                    {
+                        // XML 파싱
+                        XmlDocument xmlDoc = new XmlDocument();
+                        xmlDoc.LoadXml(match.Value);
+
+                        // 각 필드 값 추출
+                        int id = int.Parse(xmlDoc.SelectSingleNode("//Id").InnerText);
+
+                        // 좌표값에 소수점이 있을 경우 반올림하여 정수로 변환
+                        double x = double.Parse(xmlDoc.SelectSingleNode("//X").InnerText);
+                        double y = double.Parse(xmlDoc.SelectSingleNode("//Y").InnerText);
+                        double width = double.Parse(xmlDoc.SelectSingleNode("//Width").InnerText);
+                        double height = double.Parse(xmlDoc.SelectSingleNode("//Height").InnerText);
+
+                        // PCB 실제 크기(mm)에 대한 상수 설정
+                        const double PCB_WIDTH_MM = 240.0;  // PCB 너비(mm)
+                        const double PCB_HEIGHT_MM = 77.5;  // PCB 높이(mm)
+
+                        // mm에서 픽셀로 변환 (ORIGINAL_IMAGE_WIDTH, ORIGINAL_IMAGE_HEIGHT는 픽셀 단위)
+                        int pixelX = (int)Math.Round(x * ORIGINAL_IMAGE_WIDTH / PCB_WIDTH_MM);
+                        int pixelY = (int)Math.Round(y * ORIGINAL_IMAGE_HEIGHT / PCB_HEIGHT_MM);
+
+                        // 너비도 픽셀 단위로 변환
+                        double pixelWidth = width * ORIGINAL_IMAGE_WIDTH / PCB_WIDTH_MM;
+                        double pixelHeight = height * ORIGINAL_IMAGE_HEIGHT / PCB_HEIGHT_MM;
+
+                        // DefectItem 객체 생성 및 리스트에 추가
+                        DefectItem item = new DefectItem
+                        {
+                            Id = id,
+                            X = pixelX,
+                            Y = pixelY,
+                            Width = pixelWidth,
+                            Height = pixelHeight
+                        };
+
+                        defectItems.Add(item);
+                        Console.WriteLine($"불량 항목 추가됨: ID={id}, X={x}, Y={y}, Width={width}, Height={height}");
+                    }
+                    catch (Exception xmlEx)
+                    {
+                        Console.WriteLine($"XML 파싱 오류: {xmlEx.Message}");
+                        Console.WriteLine($"문제가 된 XML: {match.Value}");
+                    }
+                }
+
+                Console.WriteLine($"총 {defectItems.Count}개의 불량 항목을 파싱했습니다.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"알고리즘 실행 중 오류 발생: {ex.Message}", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
+                Console.WriteLine($"오류 발생: {ex.Message}");
+            }
+
+            return defectItems;
+        }
+        #endregion
+
 
         private void ClearBtn_Click(object sender, RoutedEventArgs e)
         {
             DefectCanvas.Children.Clear();
-        }
-        #endregion
 
-        #region 검출 결과 목록 갱신 관련 함수
+            // 마커 딕셔너리 초기화
+            defectMarkers.Clear();
+
+            // 불량 항목 목록 초기화
+            defectItems.Clear();
+
+            // 불량 상세 정보 초기화
+            DefectIdValue.Text = "";
+            DefectPositionValue.Text = "";
+            DefectHeightValue.Text = "";
+            DefectSizeValue.Text = "";
+        }
+
+        // 체크박스 체크 이벤트 - 불량 표시 보이기
+        private void DefectVisibility_Checked(object sender, RoutedEventArgs e)
+        {
+            if (DefectCanvas != null)
+            {
+                // Canvas 자체를 보이게 설정
+                DefectCanvas.Visibility = Visibility.Visible;
+            }
+        }
+
+        // 체크박스 언체크 이벤트 - 불량 표시 숨기기
+        private void DefectVisibility_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (DefectCanvas != null)
+            {
+                // Canvas 자체를 숨김 설정
+                DefectCanvas.Visibility = Visibility.Collapsed;
+            }
+        }
+
+
         // 검출 결과 목록 업데이트
         private void UpdateDefectResultsList()
         {
@@ -229,14 +391,14 @@ namespace semes
             Grid grid = new Grid();
             grid.Margin = new Thickness(5);
 
-            // 열 정의
-            for (int i = 0; i < 4; i++)
+            // 열 정의 - 5개로 변경
+            for (int i = 0; i < 5; i++)
             {
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             }
 
             // 헤더 라벨
-            string[] headers = new string[] { "ID", "X 위치", "Y 위치", "높이" };
+            string[] headers = new string[] { "ID", "X 위치", "Y 위치", "높이", "크기" };
 
             for (int i = 0; i < headers.Length; i++)
             {
@@ -251,14 +413,14 @@ namespace semes
                 grid.Children.Add(headerText);
             }
 
-            // 구분선
+            // 구분선 - ColumnSpan을 5로 변경
             Border separator = new Border
             {
                 Height = 1,
                 Background = Brushes.LightGray,
                 Margin = new Thickness(0, 25, 0, 0)
             };
-            Grid.SetColumnSpan(separator, 4);
+            Grid.SetColumnSpan(separator, 5);
             grid.Children.Add(separator);
 
             return grid;
@@ -270,8 +432,8 @@ namespace semes
             Grid grid = new Grid();
             grid.Margin = new Thickness(5, 2, 5, 2);
 
-            // 열 정의
-            for (int i = 0; i < 4; i++)
+            // 열 정의 - 5개로 변경
+            for (int i = 0; i < 5; i++)
             {
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             }
@@ -315,6 +477,16 @@ namespace semes
             };
             Grid.SetColumn(heightText, 3);
             grid.Children.Add(heightText);
+
+            // 너비 추가
+            TextBlock widthText = new TextBlock
+            {
+                Text = defect.Width.ToString("F1"),
+                Padding = new Thickness(5),
+                TextAlignment = TextAlignment.Center
+            };
+            Grid.SetColumn(widthText, 4);
+            grid.Children.Add(widthText);
 
             // 항목 선택 가능하게 만들기 (선택사항)
             grid.MouseEnter += (s, e) => grid.Background = new SolidColorBrush(Color.FromArgb(20, 0, 0, 255));
@@ -364,7 +536,7 @@ namespace semes
                 }
             }
         }
-        #endregion
+
 
         #region 불량 상세 정보 갱신 관련 함수
         // 불량 상세 정보 업데이트
@@ -387,6 +559,61 @@ namespace semes
             });
         }
         #endregion
+
+
+        // 결과 내보내기 버튼 클릭 이벤트
+        private void ExportResult_Click(object sender, EventArgs e)
+        {
+            // 내보낼 데이터가 있는지 확인
+            if (defectItems == null || defectItems.Count == 0)
+            {
+                MessageBox.Show("내보낼 검출 결과가 없습니다", "알림", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            try
+            {
+                // 저장할 대화 상자 생성
+                Microsoft.Win32.SaveFileDialog saveDialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Filter = "CSV 파일 (*.csv)|*.csv",
+                    DefaultExt = ".csv",
+                    FileName = $"불량검출결과_{DateTime.Now:yyyyMMdd_HHmmss}"
+                };
+
+                // 대화 상자 표시 및 결과 확인
+                bool? result = saveDialog.ShowDialog();
+
+                // 사용자가 저장을 선택한 경우
+                if (result == true) {
+                    // 선택한 파일 경로로 CSV파일 생성
+                    ExportToCsv(saveDialog.FileName);
+                    // 성공 메세지 표시
+                    MessageBox.Show("결과가 성공적으로 내보내졌습니다.", "완료", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex) 
+            {
+                MessageBox.Show($"결과 내보내기 중 오류가 발생했습니다.: {ex.Message}", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // CSV 파일 내보내기 
+        private void ExportToCsv(string filePath)
+        {
+            // CSV 파일 생성
+            using (StreamWriter writer = new StreamWriter(filePath, false, Encoding.UTF8))
+            {
+                // 헤더
+                writer.WriteLine("ID,X좌표,Y좌표,너비(um),높이(um)");
+
+                // 각 불량 항목에 대한 데이터 작성
+                foreach (var defect in defectItems)
+                {
+                    writer.WriteLine($"{defect.Id},{defect.X},{defect.Y},{defect.Width},{defect.Height}");
+                }
+            }
+        }
 
         // 불량 항목 클래스
         public class DefectItem

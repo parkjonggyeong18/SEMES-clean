@@ -48,7 +48,10 @@
                 <CheckBox 
                     Margin="10,0,0,0" 
                     Content="불량 표시"
-                    IsChecked="True"/>
+                    IsChecked="True"
+                    Checked="DefectVisibility_Checked"
+                    Unchecked="DefectVisibility_Unchecked"
+                    x:Name="DefectVisibilityCheckBox"/>
             </StackPanel>
         </materialDesign:Card>
 
@@ -105,9 +108,6 @@
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="해상도:" Margin="0,0,10,8"/>
                         <TextBlock Grid.Row="1" Grid.Column="1" Text="4000 x 12000" Margin="0,0,0,8"/>
 
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="픽셀 크기:" Margin="0,0,10,8"/>
-                        <TextBlock Grid.Row="2" Grid.Column="1" Text="-" Margin="0,0,0,8"/>
-
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="데이터 크기:" Margin="0,0,10,8"/>
                         <TextBlock Grid.Row="3" Grid.Column="1" Text="약 190MB" Margin="0,0,0,8"/>
                     </Grid>
@@ -132,7 +132,8 @@
                         <Button 
                             Grid.Column="1"
                             Style="{StaticResource MaterialDesignFlatButton}"
-                            Content="결과 내보내기"/>
+                            Content="결과 내보내기"
+                            Click="ExportResult_Click"/>
                     </Grid>
 
                     <Border Height="150" BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="1" Margin="0,8,0,0">
