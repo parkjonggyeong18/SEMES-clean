@@ -16,7 +16,6 @@ namespace semes.Features.Auth.Views
         public LoginPage()
         {
             InitializeComponent();
-
             _authService = new AuthService();
         }
 
@@ -29,7 +28,7 @@ namespace semes.Features.Auth.Views
             // 입력값 검증
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
-                MessageBox.Show("아이디와 비밀번호를 확인해주세요.");
+                ShowMessage("아이디와 비밀번호를 확인해주세요.");
                 return;
             }
 
@@ -41,23 +40,46 @@ namespace semes.Features.Auth.Views
             {
                 string currentUser = _authService.CurrentUser;
 
-                Window currentWindow = Window.GetWindow(this);
+                // 에러 메시지 숨기기 (성공시)
+                lblErrorMessage.Visibility = Visibility.Collapsed;
 
-                if (currentWindow is MainWindow mainWindow)
+                // 현재 로그인 창 닫기
+                Window loginWindow = Window.GetWindow(this);
+                loginWindow.Close();
+
+                // Welcome 창 표시
+                var welcomeWindow = new WelcomeWindow(currentUser);
+
+                // Welcome 창이 닫힐 때 메인 윈도우 표시
+                welcomeWindow.Closed += (s, args) =>
                 {
-                    mainWindow.btnDashboard.IsEnabled = true;
-                    mainWindow.btnDefectDetection.IsEnabled = true;
-                    mainWindow.btnDefectStats.IsEnabled = true;
-                }   
+                    // 메인 윈도우 활성화
+                    App.MainWindowInstance.btnDashboard.IsEnabled = true;
+                    App.MainWindowInstance.btnDefectDetection.IsEnabled = true;
+                    App.MainWindowInstance.btnDefectStats.IsEnabled = true;
 
-                this.NavigationService.Navigate(new DashboardPage());
+                    // 메인 윈도우 표시
+                    Application.Current.MainWindow = App.MainWindowInstance;
+                    App.MainWindowInstance.Show();
 
-                MessageBox.Show($"환영합니다, {currentUser}님!");
+                    // 대시보드로 이동
+                    App.MainFrame.Navigate(new DashboardPage());
+                };
+
+                welcomeWindow.ShowDialog();
             }
             else
             {
-                MessageBox.Show("아이디 또는 비밀번호가 올바르지 않습니다.");
+                // 로그인 실패시 에러 메시지 표시
+                ShowMessage("아이디 또는 비밀번호가 올바르지 않습니다.");
             }
+        }
+
+        // WinForm과 같은 방식의 에러 메시지 표시 메서드
+        private void ShowMessage(string message)
+        {
+            lblErrorMessage.Text = message;
+            lblErrorMessage.Visibility = Visibility.Visible;
         }
     }
 }
