@@ -11,6 +11,8 @@ namespace semes.Services
 
         public string CurrentUser => _currentUser;
 
+        public string UserRole { get; private set; } = "USER";
+
         public AuthService()
         {
             _currentUser = string.Empty;
@@ -30,7 +32,7 @@ namespace semes.Services
                 {
                     await connection.OpenAsync();
 
-                    string query = "SELECT COUNT(*) FROM users WHERE username = @username AND password = @password";
+                    string query = "SELECT role FROM users WHERE username = @username AND password = @password";
 
                     using (var command = new MySqlCommand(query, connection))
                     {
@@ -38,25 +40,35 @@ namespace semes.Services
                         command.Parameters.AddWithValue("@password", password);
 
                         var result = await command.ExecuteScalarAsync();
-                        int resultCnt = Convert.ToInt32(result);
+                        //int resultCnt = Convert.ToInt32(result);
 
-                        if (resultCnt == 1)
+                        //if (resultCnt == 1)
+                        //{
+                        //    _currentUser = username;
+                        //    return true;
+                        //}
+                        //else if (resultCnt == 0)
+                        //{
+                        //    return false;
+                        //}
+                        //else
+                        //{
+                        //    Console.WriteLine("DB 입출력 중 오류 발생.");
+                        //    throw new Exception("회원 조회 오류");
+                        //}
+                        if (result != null)
                         {
                             _currentUser = username;
+                            UserRole = result.ToString();  // "USER" 또는 "ADMIN"
                             return true;
-                        }
-                        else if (resultCnt == 0)
-                        {
-                            return false;
                         }
                         else
                         {
-                            Console.WriteLine("DB 입출력 중 오류 발생.");
-                            throw new Exception("회원 조회 오류");
+                            return false;
                         }
                     }
                 }
-
+                
                 return false;
             }
             catch (Exception ex)

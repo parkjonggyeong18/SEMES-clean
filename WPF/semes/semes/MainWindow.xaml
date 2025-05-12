@@ -50,6 +50,32 @@
                         <TextBlock Text="불량률 현황" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Margin="0,5,0,0"/>
                     </StackPanel>
                 </Button>
+
+                <Button x:Name="btnCommunity"
+                    Style="{StaticResource MaterialDesignFlatButton}"
+                    Height="80"
+                    Margin="5"
+                    Click="btnCommunity_Click"
+                    IsEnabled="False">
+                    <StackPanel Width="70">
+                        <materialDesign:PackIcon Kind="Forum" Width="24" Height="24" HorizontalAlignment="Center"/>
+                        <TextBlock Text="게시판" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </Button>
+
+
+                <Button x:Name="btnUserManagement"
+                    Style="{StaticResource MaterialDesignFlatButton}"
+                    Height="80"
+                    Margin="5"
+                    Click="btnUserManagement_Click"
+                    Visibility="Collapsed">
+                    <StackPanel Width="70">
+                        <materialDesign:PackIcon Kind="AccountGroup" Width="24" Height="24" HorizontalAlignment="Center"/>
+                        <TextBlock Text="회원관리" HorizontalAlignment="Center" TextAlignment="Center" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </Button>
+
             </StackPanel>
         </materialDesign:Card>
 

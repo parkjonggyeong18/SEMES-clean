@@ -45,9 +45,17 @@ namespace semes.Features.Auth.Views
 
                 if (currentWindow is MainWindow mainWindow)
                 {
+                    mainWindow.CurrentUser = currentUser;
+
                     mainWindow.btnDashboard.IsEnabled = true;
                     mainWindow.btnDefectDetection.IsEnabled = true;
                     mainWindow.btnDefectStats.IsEnabled = true;
+                    mainWindow.btnCommunity.IsEnabled = true;
+
+                    if (_authService.UserRole == "ADMIN")
+                    {
+                        mainWindow.btnUserManagement.Visibility = Visibility.Visible;
+                    }
                 }   
 
                 this.NavigationService.Navigate(new DashboardPage());
