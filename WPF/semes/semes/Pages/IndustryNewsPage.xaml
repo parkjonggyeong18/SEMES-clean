@@ -1,0 +1,80 @@
+﻿    <Page x:Class="semes.IndustryNewsPage"
+          xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+          xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+          TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+          TextElement.FontWeight="Regular"
+          TextElement.FontSize="13"
+          TextOptions.TextFormattingMode="Ideal"
+          TextOptions.TextRenderingMode="Auto"
+  
+          FontFamily="{DynamicResource MaterialDesignFont}"
+          Title="IndustryNewsPage">
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ItemsControl Name="NewsListView" Margin="10">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                    <materialDesign:TransitioningContent OpeningEffect="{materialDesign:TransitionEffect FadeIn}">
+                        <materialDesign:Card 
+                    
+                         Padding="16"
+                        
+                      >
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="120"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- 뉴스 텍스트 -->
+                                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                    <TextBlock Text="{Binding Title}" 
+           FontSize="16"
+           FontWeight="Bold"
+           TextWrapping="Wrap"
+           Margin="0,0,0,6"
+           MouseLeftButtonUp="TextBlock_MouseLeftButtonUp">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#222222" />
+                                                <Setter Property="Cursor" Value="Hand" />
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Foreground" Value="Blue" />
+                                                        <Setter Property="TextDecorations" Value="Underline" />
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+
+                                    <TextBlock Text="{Binding Description}" 
+                           FontSize="14"
+                           Foreground="#666666"
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,8"/>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Source}" FontSize="12" Foreground="#666666"/>
+                                        <TextBlock Text=" · " FontSize="12" Foreground="#666666"/>
+                                        <TextBlock Text="{Binding Time}" FontSize="12" Foreground="#666666"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- 썸네일 -->
+                                <Border Grid.Column="1" 
+                    Width="120" Height="90" 
+                    CornerRadius="4"
+                    ClipToBounds="True"
+                    VerticalAlignment="Top">
+                                    <Image Source="{Binding Thumbnail}" Stretch="UniformToFill"/>
+                                </Border>
+                            </Grid>
+                        </materialDesign:Card>
+                    </materialDesign:TransitioningContent>
+                </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Page>
