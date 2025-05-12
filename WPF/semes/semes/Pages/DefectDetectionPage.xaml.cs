@@ -1,267 +1,401 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.Printing;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using Microsoft.Win32;
+using System.Windows.Shapes;
 
 namespace semes
 {
-    /// <summary>
-    /// DefectDetectionPage.xaml에 대한 상호 작용 논리
-    /// </summary>
+    //<summary>
+    //DefectDetectionPage.xaml에 대한 상호 작용 논리
+    //</summary>
     public partial class DefectDetectionPage : Page
     {
-        // PCB 이미지 경로
-        private string currentImagePath;
+        // 불량 목록
+        private ObservableCollection<DefectItem> defectItems;
 
-        // 불량 목록 (실제 구현에서는 더 복잡한 클래스가 필요할 수 있음)
-        private List<DefectItem> defectItems = new List<DefectItem>();
+        // 불량 마커를 관리하기 위한 딕셔너리 (ID로 찾기 쉽게)
+        private Dictionary<int, UIElement> defectMarkers = new Dictionary<int, UIElement>();
 
-        // 선택된 불량 항목
-        private DefectItem selectedDefect;
+        // PCB 이미지 크기
+        private const double ORIGINAL_IMAGE_WIDTH = 12000;
+        private const double ORIGINAL_IMAGE_HEIGHT = 4000;
 
         public DefectDetectionPage()
         {
             InitializeComponent();
+
+            // defectItems 내용이 변할때마다 호출할 함수 등록
+            defectItems = new ObservableCollection<DefectItem>();
+            defectItems.CollectionChanged += DefectItems_CollectionChanged;
+
+            // PCBImage가 로드될 때 실행될 함수
+            PCBImage.Loaded += PCBImage_Loaded;
+        }
+        private void CreateSampleDefects()
+        {
+            // 예시 데이터 - 원본 이미지 좌표계 기준 (픽셀 단위)
+            defectItems.Add(new DefectItem { Id = 1, X = 500, Y = 400, Width = 15, Height = 2.5 });
+            defectItems.Add(new DefectItem { Id = 2, X = 1200, Y = 800, Width = 20, Height = 3.2 });
+            defectItems.Add(new DefectItem { Id = 3, X = 2000, Y = 1500, Width = 10, Height = 1.8 });
+            defectItems.Add(new DefectItem { Id = 4, X = 3000, Y = 2000, Width = 18, Height = 2.7 });
+            defectItems.Add(new DefectItem { Id = 5, X = 0, Y = 0, Width = 18, Height = 2.7 });
         }
 
-        // 이미지 업로드 버튼 클릭 이벤트 핸들러
-        private void BtnUploadImage_Click(object sender, RoutedEventArgs e)
+        #region PCB 이미지 로딩 콜백
+        private void PCBImage_Loaded(object sender, RoutedEventArgs e)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog
+            AdjustCanvasToImage();
+        }
+
+        private void AdjustCanvasToImage()
+        {
+            // Canvas 크기를 이미지 크기에 맞게 설정
+            if (PCBImage != null && DefectCanvas != null)
             {
-                Filter = "이미지 파일|*.jpg;*.jpeg;*.png;*.bmp|모든 파일|*.*",
-                Title = "PCB 이미지 선택"
+                double imageWidth = PCBImage.ActualWidth;
+                double imageHeight = PCBImage.ActualHeight;
+
+                // Canvas 크기를 이미지 크기와 정확히 일치시킴
+                DefectCanvas.Width = imageWidth;
+                DefectCanvas.Height = imageHeight;
+
+                // Canvas 위치도 이미지 위치와 정확히 일치시킴
+                Canvas.SetLeft(DefectCanvas, Canvas.GetLeft(PCBImage));
+                Canvas.SetTop(DefectCanvas, Canvas.GetTop(PCBImage));
+
+                Console.WriteLine($"이미지 크기: {imageWidth} x {imageHeight}");
+                Console.WriteLine($"Canvas 크기: {DefectCanvas.Width} x {DefectCanvas.Height}");
+            }
+        }
+        #endregion
+
+        #region Canvas 관련 함수
+        // defectItems 변경 감지 이벤트 핸들러
+        private void DefectItems_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (DefectCanvas == null || PCBImage == null || PCBImage.ActualWidth == 0)
+                return;
+
+            // 변경 유형에 따라 처리
+            switch (e.Action)
+            {
+                case NotifyCollectionChangedAction.Add:
+                    // 새 항목 추가
+                    foreach (DefectItem newItem in e.NewItems)
+                    {
+                        AddDefectMarker(newItem);
+                    }
+                    break;
+
+                case NotifyCollectionChangedAction.Remove:
+                    // 항목 제거
+                    foreach (DefectItem oldItem in e.OldItems)
+                    {
+                        RemoveDefectMarker(oldItem.Id);
+                    }
+                    break;
+
+                case NotifyCollectionChangedAction.Replace:
+                    // 항목 교체
+                    foreach (DefectItem oldItem in e.OldItems)
+                    {
+                        RemoveDefectMarker(oldItem.Id);
+                    }
+                    foreach (DefectItem newItem in e.NewItems)
+                    {
+                        AddDefectMarker(newItem);
+                    }
+                    break;
+
+                case NotifyCollectionChangedAction.Reset:
+                    // 모든 항목 제거 (Clear 호출 시)
+                    DefectCanvas.Children.Clear();
+                    defectMarkers.Clear();
+                    break;
+            }
+
+            UpdateDefectResultsList();
+        }
+
+        // 개별 불량 마커 추가
+        private void AddDefectMarker(DefectItem defect)
+        {
+            double scaleX = PCBImage.ActualWidth / ORIGINAL_IMAGE_WIDTH;
+            double scaleY = PCBImage.ActualHeight / ORIGINAL_IMAGE_HEIGHT;
+
+            double displayX = defect.X * scaleX;
+            double displayY = defect.Y * scaleY;
+            double displaySize = Math.Max(defect.Width * scaleX, 10);
+
+            // 불량 마커 생성
+            Ellipse marker = new Ellipse
+            {
+                Width = displaySize,
+                Height = displaySize,
+                Fill = new SolidColorBrush(Colors.Red) { Opacity = 0.5 },
+                Stroke = new SolidColorBrush(Colors.Yellow),
+                StrokeThickness = 2,
+                Tag = defect
             };
 
-            if (openFileDialog.ShowDialog() == true)
+            // 마커 위치 설정 (중앙 정렬)
+            Canvas.SetLeft(marker, displayX - displaySize / 2);
+            Canvas.SetTop(marker, displayY - displaySize / 2);
+
+            // Canvas에 추가
+            DefectCanvas.Children.Add(marker);
+
+            // 딕셔너리에도 저장 (나중에 제거하기 쉽게)
+            defectMarkers[defect.Id] = marker;
+
+            Console.WriteLine($"불량 마커 추가: ID={defect.Id}, 위치=({displayX}, {displayY})");
+        }
+
+        // 불량 마커 제거
+        private void RemoveDefectMarker(int defectId)
+        {
+            if (defectMarkers.TryGetValue(defectId, out UIElement marker))
             {
-                try
+                // Canvas에서 제거
+                DefectCanvas.Children.Remove(marker);
+
+                // 딕셔너리에서도 제거
+                defectMarkers.Remove(defectId);
+
+                Console.WriteLine($"불량 마커 제거: ID={defectId}");
+            }
+        }
+        #endregion
+
+        #region 클릭 이벤트 리스너
+        private void DefectBtn_Click(object sender, RoutedEventArgs e)
+        {
+            CreateSampleDefects();
+        }
+
+        private void ClearBtn_Click(object sender, RoutedEventArgs e)
+        {
+            DefectCanvas.Children.Clear();
+        }
+        #endregion
+
+        #region 검출 결과 목록 갱신 관련 함수
+        // 검출 결과 목록 업데이트
+        private void UpdateDefectResultsList()
+        {
+            // UI 스레드에서 실행되도록 Dispatcher 사용
+            Dispatcher.Invoke(() =>
+            {
+                // 결과 목록 초기화
+                DefectResultsPanel.Children.Clear();
+
+                // 불량이 없으면 메시지 표시
+                if (defectItems.Count == 0)
                 {
-                    currentImagePath = openFileDialog.FileName;
-                    LoadImage(currentImagePath);
-
-                    // 이미지 로드 후 불량 리스트 초기화
-                    ClearDefectList();
-
-                    // PCB 정보 표시
-                    DisplayPCBInfo(currentImagePath);
+                    TextBlock noDefectsMessage = new TextBlock
+                    {
+                        Text = "검출된 불량이 없습니다.",
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Margin = new Thickness(0, 60, 0, 0),
+                        Foreground = (Brush)FindResource("MaterialDesignBodyLight")
+                    };
+                    DefectResultsPanel.Children.Add(noDefectsMessage);
+                    return;
                 }
-                catch (Exception ex)
+
+                // 불량 데이터 표시를 위한 헤더 추가 (선택사항)
+                Grid headerGrid = CreateDefectResultHeader();
+                DefectResultsPanel.Children.Add(headerGrid);
+
+                // 각 불량에 대한 결과 항목 추가
+                foreach (var defect in defectItems)
                 {
-                    MessageBox.Show($"이미지 로드 중 오류 발생: {ex.Message}", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
+                    // 불량 정보를 표시할 Grid 생성
+                    Grid defectGrid = CreateDefectResultItem(defect);
+                    DefectResultsPanel.Children.Add(defectGrid);
                 }
-            }
+            });
         }
 
-        // 불량검출 버튼 클릭 이벤트 핸들러
-        private void BtnDetectDefects_Click(object sender, RoutedEventArgs e)
+        // 결과 목록 헤더 생성
+        private Grid CreateDefectResultHeader()
         {
-            if (string.IsNullOrEmpty(currentImagePath))
+            Grid grid = new Grid();
+            grid.Margin = new Thickness(5);
+
+            // 열 정의
+            for (int i = 0; i < 4; i++)
             {
-                MessageBox.Show("먼저 PCB 이미지를 업로드해주세요.", "알림", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-
-            try
-            {
-                // 여기서 실제 불량 검출 알고리즘을 구현하거나 호출해야 함
-                // 예시 데이터로 임의의 불량을 생성
-                DetectDefects();
-
-                // 불량 목록 UI 업데이트
-                UpdateDefectListUI();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"불량 검출 중 오류 발생: {ex.Message}", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        // 초기화 버튼 클릭 이벤트 핸들러
-        private void BtnReset_Click(object sender, RoutedEventArgs e)
-        {
-            // 이미지 초기화
-            currentImagePath = null;
-
-            // 이미지 뷰 초기화
-            // PCB 이미지 요소가 있다면 Source를 null로 설정
-
-            // 불량 목록 초기화
-            ClearDefectList();
-
-            // PCB 정보 초기화
-            ClearPCBInfo();
-
-            // 불량 상세 정보 초기화
-            ClearDefectDetailInfo();
-        }
-
-        // 불량 표시 체크박스 이벤트 핸들러
-        private void ChkShowDefects_CheckedChanged(object sender, RoutedEventArgs e)
-        {
-            // 불량 표시 여부에 따라 UI 업데이트
-            // 실제 구현에서는 이미지 위에 불량 위치를 표시하는 로직이 필요
-        }
-
-        // 불량 위치로 이동 버튼 클릭 이벤트 핸들러
-        private void BtnMoveToDefect_Click(object sender, RoutedEventArgs e)
-        {
-            if (selectedDefect == null)
-            {
-                MessageBox.Show("이동할 불량을 먼저 선택해주세요.", "알림", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             }
 
-            // 선택된 불량 위치로 이미지 스크롤 또는 뷰 이동
-            // 실제 구현에서는 스크롤 뷰어나 다른 방식으로 이미지 내 위치로 이동 구현
-        }
+            // 헤더 라벨
+            string[] headers = new string[] { "ID", "X 위치", "Y 위치", "높이" };
 
-        // 이미지 로드 함수
-        private void LoadImage(string imagePath)
-        {
-            BitmapImage bitmapImage = new BitmapImage();
-            bitmapImage.BeginInit();
-            bitmapImage.UriSource = new Uri(imagePath);
-            bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-            bitmapImage.EndInit();
-
-            // PCB 이미지 컨트롤에 이미지 설정
-            // 예: pcbImageControl.Source = bitmapImage;
-        }
-
-        // 불량 검출 함수 (예시 데이터 생성)
-        private void DetectDefects()
-        {
-            // 실제 구현에서는 이미지 처리 알고리즘을 통한 불량 검출 로직이 들어가야 함
-            // 여기서는 예시 데이터만 생성
-
-            // 기존 불량 목록 초기화
-            defectItems.Clear();
-
-            // 임의의 불량 데이터 생성 (예시)
-            Random random = new Random();
-            int defectCount = random.Next(1, 6); // 1~5개의 불량 생성
-
-            for (int i = 0; i < defectCount; i++)
+            for (int i = 0; i < headers.Length; i++)
             {
-                DefectItem defect = new DefectItem
+                TextBlock headerText = new TextBlock
                 {
-                    Id = i + 1,
-                    X = random.Next(100, 3900),
-                    Y = random.Next(100, 11900),
-                    Height = random.Next(10, 100) / 10.0,
-                    Width = random.Next(50, 200) / 10.0
+                    Text = headers[i],
+                    FontWeight = FontWeights.Bold,
+                    Padding = new Thickness(5),
+                    TextAlignment = TextAlignment.Center
                 };
-
-                defectItems.Add(defect);
+                Grid.SetColumn(headerText, i);
+                grid.Children.Add(headerText);
             }
-        }
 
-        // 불량 목록 UI 업데이트
-        private void UpdateDefectListUI()
-        {
-            // XAML에 정의된 목록 컨트롤에 불량 항목 추가
-            // ListView나 DataGrid 등이 있다면 해당 컨트롤의 ItemsSource를 설정
-
-            // 검출 결과 제목 업데이트
-            // 예: txtDefectResultTitle.Text = $"검출 결과 ({defectItems.Count}개)";
-
-            // 검출 결과가 없을 경우 메시지 표시
-            if (defectItems.Count == 0)
+            // 구분선
+            Border separator = new Border
             {
-                // 검출 결과 없음 메시지 표시
-            }
+                Height = 1,
+                Background = Brushes.LightGray,
+                Margin = new Thickness(0, 25, 0, 0)
+            };
+            Grid.SetColumnSpan(separator, 4);
+            grid.Children.Add(separator);
+
+            return grid;
         }
 
-        // 불량 항목 선택 이벤트 핸들러
-        private void DefectListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        // 개별 불량 결과 항목 생성
+        private Grid CreateDefectResultItem(DefectItem defect)
         {
-            // 선택된 불량 항목 가져오기
-            // 예: DefectItem selectedItem = (DefectItem)defectListView.SelectedItem;
+            Grid grid = new Grid();
+            grid.Margin = new Thickness(5, 2, 5, 2);
 
-            // 선택된 항목이 있으면 상세 정보 표시
-            if (selectedDefect != null)
+            // 열 정의
+            for (int i = 0; i < 4; i++)
             {
-                DisplayDefectDetailInfo(selectedDefect);
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             }
-            else
+
+            // ID
+            TextBlock idText = new TextBlock
             {
-                ClearDefectDetailInfo();
-            }
-        }
+                Text = defect.Id.ToString(),
+                Padding = new Thickness(5),
+                TextAlignment = TextAlignment.Center
+            };
+            Grid.SetColumn(idText, 0);
+            grid.Children.Add(idText);
 
-        // PCB 정보 표시
-        private void DisplayPCBInfo(string imagePath)
-        {
-            try
+            // X 위치
+            TextBlock xText = new TextBlock
             {
-                // 실제 구현에서는 이미지에서 PCB 정보를 추출하거나 관련 데이터를 가져와야 함
-                // 여기서는 예시 데이터 표시
+                Text = defect.X.ToString(),
+                Padding = new Thickness(5),
+                TextAlignment = TextAlignment.Center
+            };
+            Grid.SetColumn(xText, 1);
+            grid.Children.Add(xText);
 
-                // 파일 정보 가져오기
-                FileInfo fileInfo = new FileInfo(imagePath);
-                long fileSizeBytes = fileInfo.Length;
-                string fileSizeMB = (fileSizeBytes / (1024.0 * 1024.0)).ToString("F2");
-
-                // XAML에 정의된 텍스트 요소에 정보 설정
-                // 예: txtPCBSize.Text = "77.5mm x 240mm";
-                // 예: txtPCBResolution.Text = "4000 x 12000";
-                // 예: txtPCBPixelSize.Text = "-";
-                // 예: txtPCBDataSize.Text = $"약 {fileSizeMB}MB";
-            }
-            catch (Exception ex)
+            // Y 위치
+            TextBlock yText = new TextBlock
             {
-                MessageBox.Show($"PCB 정보 표시 중 오류 발생: {ex.Message}", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
+                Text = defect.Y.ToString(),
+                Padding = new Thickness(5),
+                TextAlignment = TextAlignment.Center
+            };
+            Grid.SetColumn(yText, 2);
+            grid.Children.Add(yText);
+
+            // 높이
+            TextBlock heightText = new TextBlock
+            {
+                Text = defect.Height.ToString("F1"),
+                Padding = new Thickness(5),
+                TextAlignment = TextAlignment.Center
+            };
+            Grid.SetColumn(heightText, 3);
+            grid.Children.Add(heightText);
+
+            // 항목 선택 가능하게 만들기 (선택사항)
+            grid.MouseEnter += (s, e) => grid.Background = new SolidColorBrush(Color.FromArgb(20, 0, 0, 255));
+            grid.MouseLeave += (s, e) => grid.Background = null;
+            grid.MouseDown += (s, e) => HighlightDefect(defect.Id);
+
+            return grid;
+        }
+
+        // 불량 항목 선택 시 해당 불량 강조 표시 (선택사항)
+        private void HighlightDefect(int defectId)
+        { // 선택된 불량 찾기
+            DefectItem selectedDefect = null;
+            foreach (var defect in defectItems)
+            {
+                if (defect.Id == defectId)
+                {
+                    selectedDefect = defect;
+                    break;
+                }
+            }
+
+            if (selectedDefect == null)
+                return;
+
+            // 상세 정보 업데이트
+            UpdateDefectDetails(selectedDefect);
+
+            // 마커 강조 표시
+            if (defectMarkers.TryGetValue(defectId, out UIElement marker))
+            {
+                // 모든 마커를 원래 스타일로
+                foreach (var item in defectMarkers.Values)
+                {
+                    if (item is Ellipse ellipse)
+                    {
+                        ellipse.Stroke = new SolidColorBrush(Colors.Yellow);
+                        ellipse.StrokeThickness = 2;
+                    }
+                }
+
+                // 선택된 마커 강조
+                if (marker is Ellipse selectedEllipse)
+                {
+                    selectedEllipse.Stroke = new SolidColorBrush(Colors.Lime);
+                    selectedEllipse.StrokeThickness = 3;
+                }
             }
         }
+        #endregion
 
-        // 불량 상세 정보 표시
-        private void DisplayDefectDetailInfo(DefectItem defect)
+        #region 불량 상세 정보 갱신 관련 함수
+        // 불량 상세 정보 업데이트
+        private void UpdateDefectDetails(DefectItem defect)
         {
-            // XAML에 정의된 텍스트 요소에 정보 설정
-            // 예: txtDefectId.Text = defect.Id.ToString();
-            // 예: txtDefectPosition.Text = $"{defect.X}, {defect.Y}";
-            // 예: txtDefectHeight.Text = defect.Height.ToString("F1");
-            // 예: txtDefectSize.Text = $"{defect.Width} x {defect.Height}";
-        }
+            // UI 스레드에서 실행되도록 Dispatcher 사용
+            Dispatcher.Invoke(() =>
+            {
+                // 불량 ID
+                DefectIdValue.Text = defect.Id.ToString();
 
-        // 불량 목록 초기화
-        private void ClearDefectList()
+                // 위치 (X,Y)
+                DefectPositionValue.Text = $"({defect.X}, {defect.Y})";
+
+                // 높이
+                DefectHeightValue.Text = $"{defect.Height} um";
+
+                // 크기 (Width 속성 사용)
+                DefectSizeValue.Text = $"{defect.Width} um";
+            });
+        }
+        #endregion
+
+        // 불량 항목 클래스
+        public class DefectItem
         {
-            defectItems.Clear();
-            // UI 컨트롤 초기화
-            // 예: defectListView.ItemsSource = null;
+            public int Id { get; set; }
+            public int X { get; set; }
+            public int Y { get; set; }
+            public double Height { get; set; }
+            public double Width { get; set; }
         }
-
-        // PCB 정보 초기화
-        private void ClearPCBInfo()
-        {
-            // 텍스트 요소 초기화
-            // 예: txtPCBSize.Text = "-";
-            // 예: txtPCBResolution.Text = "-";
-            // 예: txtPCBPixelSize.Text = "-";
-            // 예: txtPCBDataSize.Text = "-";
-        }
-
-        // 불량 상세 정보 초기화
-        private void ClearDefectDetailInfo()
-        {
-            // 텍스트 요소 초기화
-            // 예: txtDefectId.Text = "-";
-            // 예: txtDefectPosition.Text = "-";
-            // 예: txtDefectHeight.Text = "-";
-            // 예: txtDefectSize.Text = "-";
-        }
-    }
-
-    // 불량 항목 클래스
-    public class DefectItem
-    {
-        public int Id { get; set; }
-        public int X { get; set; }
-        public int Y { get; set; }
-        public double Height { get; set; }
-        public double Width { get; set; }
     }
 }

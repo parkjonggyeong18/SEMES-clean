@@ -29,14 +29,16 @@
                     Content="이미지 업로드"/>
 
                 <Button 
+                    x:Name="DefectBtn"
                     Style="{StaticResource MaterialDesignOutlinedButton}"
                     Margin="5"
-                    Content="불량검출"/>
+                    Content="불량검출" Click="DefectBtn_Click"/>
 
-                <Button 
+                <Button
+                    x:Name="ClearBtn"
                     Style="{StaticResource MaterialDesignOutlinedButton}"
                     Margin="5"
-                    Content="초기화"/>
+                    Content="초기화" Click="ClearBtn_Click"/>
 
                 <TextBlock 
                     VerticalAlignment="Center" 
@@ -52,13 +54,20 @@
 
         <!-- PCB 이미지 표시 영역 -->
         <Border Grid.Row="1" Grid.Column="0" BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="1" Margin="10,0,10,10">
-            <Image Stretch="Uniform">
-                <Image.Style>
-                    <Style TargetType="Image">
-                        <Setter Property="Source" Value="/Resources/pcb_with_dies.tif"/>
-                    </Style>
-                </Image.Style>
-            </Image>
+            <!-- Grid를 사용하여 이미지와 Canvas를 겹침 -->
+            <Grid x:Name="PCBContainer">
+                <!-- PCB 이미지 - 원래 스타일 유지 -->
+                <Image x:Name="PCBImage" Stretch="Uniform">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Setter Property="Source" Value="/semes;component/Resources/pcb_with_dies.tif"/>
+                        </Style>
+                    </Image.Style>
+                </Image>
+
+                <!-- 불량 위치 표시를 위한 Canvas - 투명 배경 -->
+                <Canvas x:Name="DefectCanvas" Background="Transparent"/>
+            </Grid>
         </Border>
 
         <!-- 오른쪽 정보 패널 -->
@@ -118,7 +127,7 @@
                             Grid.Column="0"
                             Style="{StaticResource MaterialDesignHeadline6TextBlock}" 
                             VerticalAlignment="Center"
-                            Text="검출 결과 (0개)"/>
+                            Text="검출 결과"/>
 
                         <Button 
                             Grid.Column="1"
@@ -126,31 +135,19 @@
                             Content="결과 내보내기"/>
                     </Grid>
 
-                    <Grid Margin="0,16,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <TextBlock Grid.Column="0" Text="번호" HorizontalAlignment="Center" FontWeight="SemiBold"/>
-                        <TextBlock Grid.Column="1" Text="X 위치" HorizontalAlignment="Center" FontWeight="SemiBold"/>
-                        <TextBlock Grid.Column="2" Text="Y 위치" HorizontalAlignment="Center" FontWeight="SemiBold"/>
-                        <TextBlock Grid.Column="3" Text="높이" HorizontalAlignment="Center" FontWeight="SemiBold"/>
-                    </Grid>
-
                     <Border Height="150" BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="1" Margin="0,8,0,0">
                         <ScrollViewer>
-                            <StackPanel>
+                            <StackPanel x:Name="DefectResultsPanel">
                                 <!-- 검출 결과가 여기에 표시됩니다 -->
-                                <TextBlock Text="검출된 불량이 없습니다." 
-                                          HorizontalAlignment="Center" 
-                                          VerticalAlignment="Center"
-                                          Margin="0,60,0,0"
-                                          Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+                                <TextBlock x:Name="NoDefectsMessage"
+                                           Text="검출된 불량이 없습니다." 
+                                           HorizontalAlignment="Center" 
+                                           VerticalAlignment="Center"
+                                           Margin="0,60,0,0"
+                                           Foreground="{DynamicResource MaterialDesignBodyLight}"/>
                             </StackPanel>
                         </ScrollViewer>
+
                     </Border>
                 </StackPanel>
             </materialDesign:Card>
@@ -159,10 +156,9 @@
             <materialDesign:Card Grid.Row="2" Margin="0,0,0,10" Padding="16">
                 <StackPanel>
                     <TextBlock 
-                        Style="{StaticResource MaterialDesignHeadline6TextBlock}" 
-                        Margin="0,0,0,16" 
-                        Text="불량 상세 정보"/>
-
+                                Style="{StaticResource MaterialDesignHeadline6TextBlock}" 
+                                Margin="0,0,0,16" 
+                                Text="불량 상세 정보"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -174,31 +170,26 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="불량 ID:" Margin="0,0,10,8"/>
-                        <TextBlock Grid.Row="0" Grid.Column="1" Text="-" Margin="0,0,0,8"/>
-
+                        <TextBlock x:Name="DefectIdValue" Grid.Row="0" Grid.Column="1" Text="-" Margin="0,0,0,8"/>
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="위치 (X,Y):" Margin="0,0,10,8"/>
-                        <TextBlock Grid.Row="1" Grid.Column="1" Text="-" Margin="0,0,0,8"/>
-
+                        <TextBlock x:Name="DefectPositionValue" Grid.Row="1" Grid.Column="1" Text="-" Margin="0,0,0,8"/>
                         <TextBlock Grid.Row="2" Grid.Column="0" Text="높이:" Margin="0,0,10,8"/>
-                        <TextBlock Grid.Row="2" Grid.Column="1" Text="-" Margin="0,0,0,8"/>
-
+                        <TextBlock x:Name="DefectHeightValue" Grid.Row="2" Grid.Column="1" Text="-" Margin="0,0,0,8"/>
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="크기:" Margin="0,0,10,8"/>
-                        <TextBlock Grid.Row="3" Grid.Column="1" Text="-" Margin="0,0,0,8"/>
+                        <TextBlock x:Name="DefectSizeValue" Grid.Row="3" Grid.Column="1" Text="-" Margin="0,0,0,8"/>
                     </Grid>
                 </StackPanel>
             </materialDesign:Card>
-
             <!-- 작업 버튼 -->
+            <!--
             <Button 
                 Grid.Row="3"
                 Style="{StaticResource MaterialDesignRaisedButton}"
                 Content="불량 위치로 이동"
                 HorizontalAlignment="Stretch"
                 Height="40"/>
+            -->
         </Grid>
     </Grid>
 </Page>
-    
-    
