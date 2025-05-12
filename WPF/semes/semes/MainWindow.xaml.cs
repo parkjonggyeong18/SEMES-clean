@@ -63,6 +63,12 @@ namespace semes
             SetActiveButton(btnCommunity);
         }
 
+        private void btnIndustryNews_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(new IndustryNewsPage());
+            SetActiveButton(btnIndustryNews);
+        }
+
         private void btnUserManagement_Click(object sender, RoutedEventArgs e)
         {
             MainFrame.Navigate(new UserManagementPage());
