@@ -4,90 +4,305 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:semes.Features.Auth.Views"
-      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
       mc:Ignorable="d" 
       d:DesignHeight="650" d:DesignWidth="1050"
       Title="Login">
+
+    <Page.Resources>
+        <!-- 하이테크 블루 그라데이션 배경 -->
+        <LinearGradientBrush x:Key="MainBackground" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#1976D2" Offset="0"/>
+            <GradientStop Color="#2196F3" Offset="0.5"/>
+            <GradientStop Color="#0288D1" Offset="1"/>
+        </LinearGradientBrush>
+
+        <!-- 모던 텍스트박스 -->
+        <Style x:Key="TechTextBox" TargetType="TextBox">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Grid>
+                            <!-- 배경 효과 -->
+                            <Border Background="#FFFFFF" 
+                                    CornerRadius="10" 
+                                    Opacity="1"/>
+
+                            <!-- 테두리 그라데이션 -->
+                            <Border CornerRadius="10" 
+                                    BorderThickness="2">
+                                <Border.BorderBrush>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#1976D2" Offset="0"/>
+                                        <GradientStop Color="#2196F3" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.BorderBrush>
+                            </Border>
+
+                            <!-- 내용 -->
+                            <ScrollViewer x:Name="PART_ContentHost" 
+                                          Margin="15,10"
+                                          VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#2196F3" BlurRadius="15" ShadowDepth="0" Opacity="0.4"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Foreground" Value="#333"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="Height" Value="40"/>
+        </Style>
+
+        <!-- 패스워드박스 스타일 -->
+        <Style x:Key="TechPasswordBox" TargetType="PasswordBox">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="PasswordBox">
+                        <Grid>
+                            <!-- 배경 효과 -->
+                            <Border Background="#FFFFFF" 
+                                    CornerRadius="10" 
+                                    Opacity="1"/>
+
+                            <!-- 테두리 그라데이션 -->
+                            <Border CornerRadius="10" 
+                                    BorderThickness="2">
+                                <Border.BorderBrush>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#1976D2" Offset="0"/>
+                                        <GradientStop Color="#2196F3" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.BorderBrush>
+                            </Border>
+
+                            <!-- 내용 -->
+                            <ScrollViewer x:Name="PART_ContentHost" 
+                                          Margin="15,10"
+                                          VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#2196F3" BlurRadius="15" ShadowDepth="0" Opacity="0.4"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Foreground" Value="#333"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="Height" Value="40"/>
+        </Style>
+
+        <!-- 하이테크 버튼 스타일 -->
+        <Style x:Key="TechButton" TargetType="Button">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="MainBorder" 
+                                CornerRadius="25"
+                                Padding="20,10"
+                                MinWidth="320"
+                                Height="45">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#1976D2" Offset="0"/>
+                                    <GradientStop Color="#2196F3" Offset="0.5"/>
+                                    <GradientStop Color="#0288D1" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <Border.Effect>
+                                <DropShadowEffect Color="#1976D2" BlurRadius="20" ShadowDepth="0" Opacity="0.6"/>
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="MainBorder" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#1976D2" BlurRadius="25" ShadowDepth="0" Opacity="0.8"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <!-- 체크박스 스타일 -->
+        <Style x:Key="TechCheckBox" TargetType="CheckBox">
+            <Setter Property="Foreground" Value="#333"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <StackPanel Orientation="Horizontal">
+                            <Border x:Name="CheckBoxBorder" 
+                                    Width="18" 
+                                    Height="18" 
+                                    CornerRadius="3"
+                                    BorderThickness="2"
+                                    Background="White">
+                                <Border.BorderBrush>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#1976D2" Offset="0"/>
+                                        <GradientStop Color="#2196F3" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.BorderBrush>
+                                <Path x:Name="CheckMark" 
+                                      Data="M 2 6 L 5 9 L 9 2" 
+                                      Stroke="White" 
+                                      StrokeThickness="2" 
+                                      Visibility="Collapsed"/>
+                            </Border>
+                            <ContentPresenter Content="{TemplateBinding Content}" 
+                                              Margin="8,0,0,0" 
+                                              VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="CheckBoxBorder" Property="Background">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#1976D2" Offset="0"/>
+                                            <GradientStop Color="#2196F3" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
+
+    <!-- 메인 Grid -->
     <Grid>
-        <Grid.Background>
-            <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.WindowColorKey}}" />
-        </Grid.Background>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+        <!-- 배경 그라데이션 -->
+        <Rectangle>
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#1976D2" Offset="0"/>
+                    <GradientStop Color="#2196F3" Offset="0.5"/>
+                    <GradientStop Color="#0288D1" Offset="1"/>
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+
+        <!-- 배경 이미지 (반투명) -->
+        <Image Source="/semes;component/Resources/semes_comp.png"
+               Stretch="UniformToFill"
+               Opacity="0.4"/>
+
+        <!-- 글래스모피즘 오버레이 -->
+        <Rectangle Opacity="0.6">
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#401976D2" Offset="0"/>
+                    <GradientStop Color="#202196F3" Offset="1"/>
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+
         <!-- 로그인 카드 -->
-        <Border Grid.Row="1" 
-                Width="400" 
+        <Border Width="390" 
                 VerticalAlignment="Center" 
-                Margin="0,20,0,0" 
-                Background="White" 
-                CornerRadius="8" 
+                HorizontalAlignment="Center"
+                Background="White"
+                CornerRadius="20" 
                 Padding="30"
-                Effect="{StaticResource MaterialDesignShadowDepth3}">
+                Opacity="0.98">
+            <Border.Effect>
+                <DropShadowEffect Color="#1976D2" BlurRadius="40" ShadowDepth="0" Opacity="0.5"/>
+            </Border.Effect>
+
             <StackPanel>
-                <Image x:Name="LogoImage"
-           Source="/semes;component/Resources/semes_logo.png"
-           Width="240"
-           Margin="0,0,0,40"
-           HorizontalAlignment="Center"/>
+                <!-- 로고 이미지 -->
+                <StackPanel HorizontalAlignment="Center"
+                            Margin="0,0,0,25">
+                    <Image x:Name="LogoImage"
+                           Source="/semes;component/Resources/semes_logo.png"
+                           Width="180"
+                           Margin="0,0,0,10"
+                           HorizontalAlignment="Center"/>
+                    <TextBlock Text="아산 사업장" 
+                               FontSize="14" 
+                               Foreground="#666"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+
                 <TextBlock Text="로그인" 
-               FontSize="24" 
-               FontWeight="Bold" 
-               Margin="0,0,0,20" 
-               HorizontalAlignment="Center"/>
+                           FontSize="24" 
+                           FontWeight="Bold" 
+                           Margin="0,0,0,25" 
+                           HorizontalAlignment="Center"
+                           Foreground="#1976D2"/>
+
                 <!-- 아이디 입력 -->
-                <TextBox x:Name="UsernameTextBox"
-             Margin="0,10,0,15"
-             FontSize="14">
-                    <TextBox.Style>
-                        <Style TargetType="TextBox" BasedOn="{StaticResource MaterialDesignTextBox}">
-                            <Setter Property="materialDesign:HintAssist.Hint" Value="아이디"/>
-                            <Setter Property="BorderThickness" Value="1"/>
-                        </Style>
-                    </TextBox.Style>
-                </TextBox>
+                <StackPanel Margin="0,0,0,15">
+                    <TextBlock Text="아이디" 
+                               FontSize="13" 
+                               FontWeight="SemiBold" 
+                               Foreground="#333" 
+                               Margin="5,0,0,5"/>
+                    <TextBox x:Name="UsernameTextBox"
+                             Style="{StaticResource TechTextBox}"/>
+                </StackPanel>
+
                 <!-- 비밀번호 입력 -->
-                <PasswordBox x:Name="PasswordBox"
-                 Margin="0,10,0,20"
-                 FontSize="14">
-                    <PasswordBox.Style>
-                        <Style TargetType="PasswordBox" BasedOn="{StaticResource MaterialDesignPasswordBox}">
-                            <Setter Property="materialDesign:HintAssist.Hint" Value="비밀번호"/>
-                            <Setter Property="BorderThickness" Value="1"/>
-                        </Style>
-                    </PasswordBox.Style>
-                </PasswordBox>
+                <StackPanel Margin="0,0,0,20">
+                    <TextBlock Text="비밀번호" 
+                               FontSize="13" 
+                               FontWeight="SemiBold" 
+                               Foreground="#333" 
+                               Margin="5,0,0,5"/>
+                    <PasswordBox x:Name="PasswordBox"
+                                 Style="{StaticResource TechPasswordBox}"/>
+                </StackPanel>
+
                 <!-- 자동 로그인 체크박스 -->
                 <CheckBox x:Name="RememberMeCheckBox" 
-              Content="자동 로그인" 
-              Margin="0,0,0,20" 
-              FontSize="13"/>
+                          Content="자동 로그인" 
+                          Margin="0,0,0,25" 
+                          Style="{StaticResource TechCheckBox}"/>
+
                 <!-- 로그인 버튼 -->
                 <Button x:Name="LoginButton" 
-            Content="로그인" 
-            Height="45" 
-            Margin="0,10,0,15"
-            Background="#FF0078D7"
-            BorderBrush="#FF0078D7"
-            FontSize="15"
-            Click="LoginButton_Click">
-                    <Button.Style>
-                        <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
-                            <Setter Property="BorderThickness" Value="1"/>
-                        </Style>
-                    </Button.Style>
-                </Button>
+                        Content="로그인" 
+                        Style="{StaticResource TechButton}"
+                        Click="LoginButton_Click"/>
 
-                <!-- 에러 메시지 TextBlock 추가 -->
+                <!-- 에러 메시지 -->
                 <TextBlock x:Name="lblErrorMessage"
-               Text=""
-               Foreground="Red"
-               FontSize="13"
-               HorizontalAlignment="Center"
-               Margin="0,0,0,10"
-               Visibility="Collapsed"
-               TextWrapping="Wrap"/>
+                           Text=""
+                           Foreground="#D32F2F"
+                           FontSize="13"
+                           HorizontalAlignment="Center"
+                           Margin="0,15,0,0"
+                           Visibility="Collapsed"
+                           TextWrapping="Wrap"/>
             </StackPanel>
         </Border>
     </Grid>
