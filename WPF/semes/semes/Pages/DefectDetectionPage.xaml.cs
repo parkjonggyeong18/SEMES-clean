@@ -13,6 +13,7 @@ using System.Windows.Shapes;
 using System.Xml;
 using System.Xml.Serialization;
 using System.IO;
+using semes.Services;
 
 namespace semes
 {
@@ -23,6 +24,12 @@ namespace semes
     {
         // 불량 목록
         private ObservableCollection<DefectItem> defectItems;
+
+        // 현재 PCB 시리얼 넘버
+        private string currentSerialNumber;
+
+        // 서비스 인스턴스
+        private readonly PcbInspectionService _pcbInspectionService;
 
         // 불량 마커를 관리하기 위한 딕셔너리 (ID로 찾기 쉽게)
         private Dictionary<int, UIElement> defectMarkers = new Dictionary<int, UIElement>();
@@ -35,21 +42,15 @@ namespace semes
         {
             InitializeComponent();
 
+            // 서비스 인스턴스 생성
+            _pcbInspectionService = new PcbInspectionService();
+
             // defectItems 내용이 변할때마다 호출할 함수 등록
             defectItems = new ObservableCollection<DefectItem>();
             defectItems.CollectionChanged += DefectItems_CollectionChanged;
 
             // PCBImage가 로드될 때 실행될 함수
             PCBImage.Loaded += PCBImage_Loaded;
-        }
-        private void CreateSampleDefects()
-        {
-            // 예시 데이터 - 원본 이미지 좌표계 기준 (픽셀 단위)
-            defectItems.Add(new DefectItem { Id = 1, X = 500, Y = 400, Width = 15, Height = 2.5 });
-            defectItems.Add(new DefectItem { Id = 2, X = 1200, Y = 800, Width = 20, Height = 3.2 });
-            defectItems.Add(new DefectItem { Id = 3, X = 2000, Y = 1500, Width = 10, Height = 1.8 });
-            defectItems.Add(new DefectItem { Id = 4, X = 3000, Y = 2000, Width = 18, Height = 2.7 });
-            defectItems.Add(new DefectItem { Id = 5, X = 0, Y = 0, Width = 18, Height = 2.7 });
         }
 
         #region PCB 이미지 로딩 콜백
@@ -181,13 +182,32 @@ namespace semes
         }
         #endregion
 
-        #region 불량검출 클릭 이벤트 리스너
-        private void DefectBtn_Click(object sender, RoutedEventArgs e)
+        #region 불량검출 클릭 이벤트 리스너 **
+        private async void DefectBtn_Click(object sender, RoutedEventArgs e)
         {
-            string exePath = "C:\\Users\\SSAFY\\source\\repos\\Project4\\x64\\Release\\Project4.exe"; // 기본 경로 수정 필요
+            // 1. ZMap 생성
+            string zmapType = "slope_xy";
+            int numDefects = new Random().Next(0, 21);
 
-            // 알고리즘 실행 및 결과 파싱
-            List<DefectItem> items = RunDefectDetectionAndParseOutput(exePath);
+            var generator = new ZMapGenerator();
+            generator.Generate(zmapType, numDefects, out string csvPath, out string tifPath);
+
+            // 2. EXE 경로: 실행 디렉토리에 있는 Project4.exe
+            //string exePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Project4.exe");
+            string exePath = "C:\\Users\\SSAFY\\source\\repos\\Project4\\x64\\Release\\Project4.exe"; // 기본 경로 수정 필요
+            string arguments = $"\"{csvPath}\"";
+
+            if (!File.Exists(exePath))
+            {
+                MessageBox.Show($"EXE 파일이 존재하지 않습니다:\n{exePath}", "실행 오류");
+                return;
+            }
+
+            // 3. EXE 실행 및 결과 반영
+            var result = RunDefectDetectionAndParseOutput(exePath, arguments);
+            currentSerialNumber = result.Item1;
+            List<DefectItem> items = result.Item2;
+
 
             // 기존 불량 항목 초기화
             defectItems.Clear();
@@ -198,23 +218,37 @@ namespace semes
                 defectItems.Add(item);
             }
 
-            // [추가] 원점(0,0) 테스트용 불량 항목
-            //defectItems.Add(new DefectItem
-            //{
-            //    Id = 999,
-            //    X = 0,
-            //    Y = 0,
-            //    Width = 50,
-            //    Height = 50
-            //});
-        }
-        #endregion
+            // 결과에 따라 상태 메세지 표시
+            if(defectItems.Count == 0)
+            {
+                MessageBox.Show("이물질이 검출되지 않았습니다. 정상 PCB입니다.", "검사 결과", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                MessageBox.Show($"{defectItems.Count}개의 이물질이 검출되었습니다.", "검사 결과", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
 
-        #region 알고리즘(exe) 실행 후 출력되는 XML 로그를 파싱하는 함수
-        private List<DefectItem> RunDefectDetectionAndParseOutput(string exePath, string arguments = "")
+            // DB에 저장
+            bool saveSuccess = await _pcbInspectionService.SaveInspectionResultAsync(currentSerialNumber, defectItems);
+
+            if (saveSuccess)
+            {
+                MessageBox.Show($"검사 결과가 DB에 저장되었습니다.\n시리얼 넘버: {currentSerialNumber}",
+                    "저장 성공", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                MessageBox.Show("DB 저장에 실패했습니다.", "저장 실패", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+
+        // 알고리즘(exe) 실행 후 출력되는 XML 로그를 파싱하는 함수
+        private Tuple<string, List<DefectItem>> RunDefectDetectionAndParseOutput(string exePath, string arguments = "")
         {
             List<DefectItem> defectItems = new List<DefectItem>();
             StringBuilder logBuilder = new StringBuilder();
+            string serialNumber = "";
 
             try
             {
@@ -236,13 +270,32 @@ namespace semes
                     {
                         string line = process.StandardOutput.ReadLine();
                         logBuilder.AppendLine(line);
-                        Console.WriteLine(line);  // 디버깅용 - C# 콘솔에도 같은 내용 출력
-                    }
+                        Console.WriteLine(line);
 
+                        // 시리얼 넘버 추출
+                        if (line.Contains("<SerialNumber>") && line.Contains("</SerialNumber>"))
+                        {
+                            int startIndex = line.IndexOf("<SerialNumber>") + "<SerialNumber>".Length;
+                            int endIndex = line.IndexOf("</SerialNumber>");
+                            if (startIndex >= 0 && endIndex > startIndex)
+                            {
+                                serialNumber = line.Substring(startIndex, endIndex - startIndex);
+                                Console.WriteLine($"시리얼 넘버 추출: {serialNumber}");
+                            }
+                        }
+                    }
                     process.WaitForExit();
                 }
 
-                // 캡처된 로그에서 <DefectItem> 태그 추출
+                // 시리얼 넘버가 비어있으면 오류 메시지 표시
+                if (string.IsNullOrEmpty(serialNumber))
+                {
+                    MessageBox.Show("알고리즘에서 시리얼 넘버를 생성하지 않았습니다. C++ 코드를 확인해주세요.", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Console.WriteLine("시리얼 넘버를 찾을 수 없습니다.");
+                    serialNumber = "ERROR-NO-SERIAL";
+                }
+
+                // 이물질 추출
                 string logContent = logBuilder.ToString();
                 string pattern = @"<DefectItem>[\s\S]*?<\/DefectItem>";
                 MatchCollection matches = Regex.Matches(logContent, pattern, RegexOptions.Singleline);
@@ -304,10 +357,11 @@ namespace semes
                 Console.WriteLine($"오류 발생: {ex.Message}");
             }
 
-            return defectItems;
+            return new Tuple<string, List<DefectItem>>(serialNumber, defectItems);
         }
         #endregion
 
+        #region 초기화 클릭 이벤트 리스너
 
         private void ClearBtn_Click(object sender, RoutedEventArgs e)
         {
@@ -325,14 +379,15 @@ namespace semes
             DefectHeightValue.Text = "";
             DefectSizeValue.Text = "";
         }
+        #endregion
 
-        // 체크박스 체크 이벤트 - 불량 표시 보이기
+        #region 체크박스 체크 이벤트 리스너
+        // 체크박스 언체크 이벤트 - 불량 표시 보이기
         private void DefectVisibility_Checked(object sender, RoutedEventArgs e)
         {
             if (DefectCanvas != null)
             {
-                // Canvas 자체를 보이게 설정
-                DefectCanvas.Visibility = Visibility.Visible;
+                DefectCanvas.Visibility = Visibility.Visible; // Canvas자체를 보임
             }
         }
 
@@ -341,13 +396,12 @@ namespace semes
         {
             if (DefectCanvas != null)
             {
-                // Canvas 자체를 숨김 설정
-                DefectCanvas.Visibility = Visibility.Collapsed;
+                DefectCanvas.Visibility = Visibility.Collapsed; // Canvas자체를 숨김
             }
         }
+        #endregion
 
-
-        // 검출 결과 목록 업데이트
+        #region 검출 결과 목록 (우측 중앙)
         private void UpdateDefectResultsList()
         {
             // UI 스레드에서 실행되도록 Dispatcher 사용
@@ -361,7 +415,7 @@ namespace semes
                 {
                     TextBlock noDefectsMessage = new TextBlock
                     {
-                        Text = "검출된 불량이 없습니다.",
+                        Text = "정상 PCB입니다.",
                         HorizontalAlignment = HorizontalAlignment.Center,
                         VerticalAlignment = VerticalAlignment.Center,
                         Margin = new Thickness(0, 60, 0, 0),
@@ -384,8 +438,67 @@ namespace semes
                 }
             });
         }
+        #endregion
 
-        // 결과 목록 헤더 생성
+        #region 결과 내보내기 클릭 이벤트 리스너 (우측 중앙)
+        // 결과 내보내기 버튼 클릭 이벤트
+        private void ExportResult_Click(object sender, EventArgs e)
+        {
+            // 내보낼 데이터가 있는지 확인
+            if (defectItems == null || defectItems.Count == 0)
+            {
+                MessageBox.Show("내보낼 검출 결과가 없습니다", "알림", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            try
+            {
+                // 저장할 대화 상자 생성
+                Microsoft.Win32.SaveFileDialog saveDialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Filter = "CSV 파일 (*.csv)|*.csv",
+                    DefaultExt = ".csv",
+                    FileName = $"불량검출결과_{DateTime.Now:yyyyMMdd_HHmmss}"
+                };
+
+                // 대화 상자 표시 및 결과 확인
+                bool? result = saveDialog.ShowDialog();
+
+                // 사용자가 저장을 선택한 경우
+                if (result == true)
+                {
+                    // 선택한 파일 경로로 CSV파일 생성
+                    ExportToCsv(saveDialog.FileName);
+                    // 성공 메세지 표시
+                    MessageBox.Show("결과가 성공적으로 내보내졌습니다.", "완료", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"결과 내보내기 중 오류가 발생했습니다.: {ex.Message}", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // CSV 파일 내보내기 
+        private void ExportToCsv(string filePath)
+        {
+            // CSV 파일 생성
+            using (StreamWriter writer = new StreamWriter(filePath, false, Encoding.UTF8))
+            {
+                // 헤더
+                writer.WriteLine("ID,X좌표,Y좌표,너비(um),높이(um)");
+
+                // 각 불량 항목에 대한 데이터 작성
+                foreach (var defect in defectItems)
+                {
+                    writer.WriteLine($"{defect.Id},{defect.X},{defect.Y},{defect.Width},{defect.Height}");
+                }
+            }
+        }
+        #endregion
+
+        #region 불량 상세 정보 (우측 하단)
+        // 헤더 생성
         private Grid CreateDefectResultHeader()
         {
             Grid grid = new Grid();
@@ -536,10 +649,8 @@ namespace semes
                 }
             }
         }
-
-
-        #region 불량 상세 정보 갱신 관련 함수
-        // 불량 상세 정보 업데이트
+        
+        //  불량 상세 정보 갱신 관련 함수
         private void UpdateDefectDetails(DefectItem defect)
         {
             // UI 스레드에서 실행되도록 Dispatcher 사용
@@ -560,61 +671,7 @@ namespace semes
         }
         #endregion
 
-
-        // 결과 내보내기 버튼 클릭 이벤트
-        private void ExportResult_Click(object sender, EventArgs e)
-        {
-            // 내보낼 데이터가 있는지 확인
-            if (defectItems == null || defectItems.Count == 0)
-            {
-                MessageBox.Show("내보낼 검출 결과가 없습니다", "알림", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-
-            try
-            {
-                // 저장할 대화 상자 생성
-                Microsoft.Win32.SaveFileDialog saveDialog = new Microsoft.Win32.SaveFileDialog
-                {
-                    Filter = "CSV 파일 (*.csv)|*.csv",
-                    DefaultExt = ".csv",
-                    FileName = $"불량검출결과_{DateTime.Now:yyyyMMdd_HHmmss}"
-                };
-
-                // 대화 상자 표시 및 결과 확인
-                bool? result = saveDialog.ShowDialog();
-
-                // 사용자가 저장을 선택한 경우
-                if (result == true) {
-                    // 선택한 파일 경로로 CSV파일 생성
-                    ExportToCsv(saveDialog.FileName);
-                    // 성공 메세지 표시
-                    MessageBox.Show("결과가 성공적으로 내보내졌습니다.", "완료", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-            }
-            catch (Exception ex) 
-            {
-                MessageBox.Show($"결과 내보내기 중 오류가 발생했습니다.: {ex.Message}", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        // CSV 파일 내보내기 
-        private void ExportToCsv(string filePath)
-        {
-            // CSV 파일 생성
-            using (StreamWriter writer = new StreamWriter(filePath, false, Encoding.UTF8))
-            {
-                // 헤더
-                writer.WriteLine("ID,X좌표,Y좌표,너비(um),높이(um)");
-
-                // 각 불량 항목에 대한 데이터 작성
-                foreach (var defect in defectItems)
-                {
-                    writer.WriteLine($"{defect.Id},{defect.X},{defect.Y},{defect.Width},{defect.Height}");
-                }
-            }
-        }
-
+        
         // 불량 항목 클래스
         public class DefectItem
         {

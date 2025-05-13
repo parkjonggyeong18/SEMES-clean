@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Models\MainWindow.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Resources\final_pcb_with_dies_and_defects6.tif" />
     <None Remove="Resources\pcb_with_dies.tif" />
     <None Remove="Resources\semes_comp.png" />
