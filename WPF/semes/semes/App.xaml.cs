@@ -40,7 +40,7 @@ namespace semes
             };
 
             // 로그인 창만 표시
-            Current.MainWindow = loginWindow;
+            //Current.MainWindow = loginWindow;
             loginWindow.Show();
         }
     }

@@ -86,8 +86,20 @@ Click="btnIndustryNews_Click">
                     </StackPanel>
                 </Button>
 
-                    
-      </StackPanel>
+
+                <Button x:Name="btnLogout"
+                    Style="{StaticResource MaterialDesignFlatButton}"
+                    Height="80"
+                    Margin="5"
+                    VerticalAlignment="Bottom"
+                    Click="btnLogout_Click">
+                    <StackPanel Width="70">
+                        <materialDesign:PackIcon Kind="Logout" Width="24" Height="24" HorizontalAlignment="Center"/>
+                        <TextBlock Text="로그아웃" HorizontalAlignment="Center" TextAlignment="Center" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </Button>
+
+            </StackPanel>
   </materialDesign:Card>
 
         <!-- 메인 컨텐츠 영역 (Frame) -->
