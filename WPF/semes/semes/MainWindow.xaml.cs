@@ -75,13 +75,47 @@ namespace semes
             SetActiveButton(btnUserManagement);
         }
 
-        private void SetActiveButton(Button activeButton)
+        private void btnLogout_Click(object sender, RoutedEventArgs e)
+        {
+            var result = MessageBox.Show("로그아웃 하시겠습니까?", "확인", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result == MessageBoxResult.Yes)
+            {
+                // 로그인 정보 초기화
+                CurrentUser = null;
+
+                // 버튼 비활성화
+                btnDashboard.IsEnabled = false;
+                btnDefectDetection.IsEnabled = false;
+                btnDefectStats.IsEnabled = false;
+                btnCommunity.IsEnabled = false;
+                //btnIndustryNews.IsEnabled = false;
+                btnUserManagement.Visibility = Visibility.Collapsed;
+
+                this.Hide();
+
+                var loginWindow = new Window
+                {
+                    Content = new Features.Auth.Views.LoginPage(),
+                    Title = "로그인",
+                    Width = 450,
+                    Height = 500,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    ResizeMode = ResizeMode.NoResize,
+                    WindowStyle = WindowStyle.SingleBorderWindow
+                };
+
+                loginWindow.ShowDialog();
+            }
+        }
+
+        public void SetActiveButton(Button activeButton)
         {
             btnDashboard.Background = System.Windows.Media.Brushes.Transparent;
             btnDefectDetection.Background = System.Windows.Media.Brushes.Transparent;
             btnDefectStats.Background = System.Windows.Media.Brushes.Transparent;
             btnUserManagement.Background = System.Windows.Media.Brushes.Transparent;
             btnCommunity.Background = System.Windows.Media.Brushes.Transparent;
+            btnIndustryNews.Background = System.Windows.Media.Brushes.Transparent;
 
             activeButton.Background = (System.Windows.Media.Brush)FindResource("MaterialDesignPaper");
         }

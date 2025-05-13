@@ -47,6 +47,8 @@ namespace semes.Features.Auth.Views
                 Window loginWindow = Window.GetWindow(this);
                 loginWindow.Close();
 
+                var mainWindow = App.MainWindowInstance;
+                mainWindow.CurrentUser = currentUser;
                 // Welcome 창 표시
                 WelcomeWindow welcomeWindow = new WelcomeWindow(currentUser);
 
@@ -65,6 +67,8 @@ namespace semes.Features.Auth.Views
                     {
                         App.MainWindowInstance.btnUserManagement.Visibility = Visibility.Visible;
                     }
+
+                    App.MainWindowInstance.SetActiveButton(App.MainWindowInstance.btnDashboard);
 
                     // 메인 윈도우 표시
                     Application.Current.MainWindow = App.MainWindowInstance;
