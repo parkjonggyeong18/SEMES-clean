@@ -51,12 +51,12 @@
 
                 <!-- 오른쪽 컨텐트 영역 -->
                 <StackPanel Grid.Column="1" Margin="15" VerticalAlignment="Center">
-                    <TextBlock Text="로그인 성공!" 
+                    <TextBlock 
                                FontSize="22" 
                                FontWeight="Bold"
                                Foreground="#FF0078D7"
                                HorizontalAlignment="Center" 
-                               Margin="0,0,0,15"/>
+                               Margin="0,0,0,15" Width="190"><Run Text="We Make "/><Run Language="ko-kr" Text="Answer"/></TextBlock>
 
                     <TextBlock x:Name="lblUsername" 
                                Text="환영합니다, {사용자명}님!"

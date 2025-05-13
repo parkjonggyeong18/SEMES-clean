@@ -64,14 +64,14 @@
                 </Button>
 
                 <Button x:Name="btnIndustryNews"
-                   Style="{StaticResource MaterialDesignFlatButton}"
-                   Height="80"
-                   Margin="5"
-                   Click="btnIndustryNews_Click">
-                  <StackPanel Width="70">
-                      <materialDesign:PackIcon Kind="Newspaper" Width="24" Height="24" HorizontalAlignment="Center"/>
-                      <TextBlock Text="반도체 뉴스" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Margin="0,5,0,0"/>
-                  </StackPanel>
+Style="{StaticResource MaterialDesignFlatButton}"
+Height="80"
+Margin="5"
+Click="btnIndustryNews_Click">
+                    <StackPanel Width="70">
+                        <materialDesign:PackIcon Kind="Newspaper" Width="24" Height="24" HorizontalAlignment="Center"/>
+                        <TextBlock Text="반도체 뉴스" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Margin="0,5,0,0"/>
+                    </StackPanel>
                 </Button>
 
                 <Button x:Name="btnUserManagement"

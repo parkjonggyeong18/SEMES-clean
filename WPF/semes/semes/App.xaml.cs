@@ -33,7 +33,7 @@ namespace semes
                 Content = new LoginPage(),
                 Title = "로그인",
                 Width = 450,
-                Height = 500,
+                Height = 700,
                 WindowStartupLocation = WindowStartupLocation.CenterScreen,
                 ResizeMode = ResizeMode.NoResize,
                 WindowStyle = WindowStyle.SingleBorderWindow
