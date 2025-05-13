@@ -13,6 +13,8 @@
 #include <iomanip>
 #include <algorithm>
 #include <numeric>
+#include <sstream>
+#include <random>
 using namespace std;
 
 // 이물질 검출을 위한 임계값 및 PCB 크기 상수
@@ -20,6 +22,10 @@ constexpr float THRESHOLD = 2.5f;
 constexpr float PCB_WIDTH_UM = 240000.0f;
 constexpr float PCB_HEIGHT_UM = 77500.0f;
 constexpr float PCB_LENGTH_UM = 250000.0f;
+
+// 랜덤 엔진 설정
+std::random_device rd;
+std::mt19937 gen(rd());
 
 /**
  * @brief 이물질(Blob) 정보를 저장하는 구조체
@@ -398,6 +404,24 @@ static vector<BlobInfo> detectBlobsAdaptive(const uint8_t* bin, int rows, int co
 }
 
 /**
+ * @brief 시리얼 넘버 생성 함수
+ * @return 생성된 시리얼 넘버 문자열
+ */
+string generate_serial_number() {
+    auto now = std::chrono::system_clock::now();
+    auto in_time_t = std::chrono::system_clock::to_time_t(now);
+
+    std::stringstream ss;
+    ss << "PCB-" << std::put_time(std::localtime(&in_time_t), "%Y%m%d");
+
+    // 4자리 랜덤 숫자 추가
+    std::uniform_int_distribution<int> dist(1000, 9999);
+    ss << "-" << dist(gen);
+
+    return ss.str();
+}
+
+/**
  * @brief 검출된 이물질 정보를 파일로 출력하고 콘솔에 표시
  * @param blobs 이물질 정보 벡터
  * @param cols 열 수
@@ -409,50 +433,62 @@ static void outputBlobs(const vector<BlobInfo>& blobs, int cols, int rows, const
     float um_per_pixel_y = PCB_HEIGHT_UM / static_cast<float>(rows);
     float um2_per_pixel = um_per_pixel_x * um_per_pixel_y; // 픽셀당 면적(μm²)
 
-    ofstream fout(path);
-    fout << "Blob,ExcelRange,Area(pixels),Area(mm²)\n";
-    int idx = 1;
-    for (const auto& b : blobs) {
-        string start = toExcelColumn(b.minX + 1) + to_string(b.minY + 1);
-        string end = toExcelColumn(b.maxX + 1) + to_string(b.maxY + 1);
-        float area_mm2 = (b.area * um2_per_pixel) / 1e6f; // μm²에서 mm²로 변환
-        fout << idx << "," << start << "-" << end << "," << b.area << "," << fixed << setprecision(4) << area_mm2 << "\n";
-        cout << "[Blob " << idx << "] Excel 위치: " << start << "-" << end << endl;
-        idx++;
-    }
-    fout.close();
+    // 가감속 구간 보정 (양쪽에 균등하게 5mm씩)
+    float acceleration_offset_mm = 5.0f;
 
-    cout << "[이물질 위치]" << endl;
-    idx = 1;
+    ofstream fout(path);
+    fout << "Id,X,Y,Width,Height\n"; // C# 클래스 구조에 맞는 헤더
+    int idx = 1;
     for (const auto& b : blobs) {
         float x1_mm = (b.minX * um_per_pixel_x) / 1000.0f;
         float y1_mm = (b.minY * um_per_pixel_y) / 1000.0f;
         float x2_mm = (b.maxX * um_per_pixel_x) / 1000.0f;
         float y2_mm = (b.maxY * um_per_pixel_y) / 1000.0f;
-        float avg_x = (x1_mm + x2_mm) / 2.0f;
-        float avg_y = (y1_mm + y2_mm) / 2.0f;
-        float area_mm2 = (b.area * um2_per_pixel) / 1e6f;
 
-        cout << fixed << setprecision(3);
-        cout << "Blob: " << idx++ << endl;
-        cout << "시작 끝: " << y1_mm << "mm " << x1_mm << "mm ~ " << y2_mm << "mm " << x2_mm << "mm" << endl;
-        cout << "이물질 위치: X: " << avg_x << "mm, Y: " << avg_y << "mm" << endl;
-        cout << "이물질 면적: " << b.area << " 픽셀 (" << area_mm2 << " mm²)" << endl;
+        // 가감속 구간 보정 적용
+        float adjusted_x1_mm = x1_mm - acceleration_offset_mm;
+        float adjusted_x2_mm = x2_mm - acceleration_offset_mm;
+
+        float center_x = (adjusted_x1_mm + adjusted_x2_mm) / 2.0f;
+        float center_y = (y1_mm + y2_mm) / 2.0f;
+        float width = adjusted_x2_mm - adjusted_x1_mm;
+        float height = y2_mm - y1_mm;
+
+        // CSV 파일에 저장 (C# 클래스 구조에 맞게)
+        fout << idx << "," << center_x << "," << center_y << "," << width << "," << height << "\n";
+
+        // 콘솔에 출력 (XML 또는 JSON 형식으로 C#에서 쉽게 파싱할 수 있게)
+        cout << "<DefectItem>" << endl;
+        cout << "  <Id>" << idx << "</Id>" << endl;
+        cout << "  <X>" << center_x << "</X>" << endl;
+        cout << "  <Y>" << center_y << "</Y>" << endl;
+        cout << "  <Width>" << width << "</Width>" << endl;
+        cout << "  <Height>" << height << "</Height>" << endl;
+        cout << "</DefectItem>" << endl;
+
+        idx++;
     }
+    fout.close();
 }
 
 /**
  * @brief 메인 함수
  * @return 프로그램 종료 코드
  */
-int main() {
+int main(int argc, char* argv[]) {
     cout << "[PCB 이물질 감지 시작]\n";
     auto start = chrono::high_resolution_clock::now();
 
+    string csvPath = (argc > 1) ? argv[1] : "C:/Users/SSAFY/Desktop/pcb_zmap_slope_y_defects20_20250512_125502.csv";
     char* filedata = nullptr;
     DWORD filesize = 0;
-    HANDLE hMap = mapFile("C:/Users/SSAFY/Desktop/final_pcb_with_dies_and_defects14.csv", filedata, filesize);
-    if (!hMap || !filedata) return -1;
+    HANDLE hMap = mapFile(csvPath, filedata, filesize);
+
+
+    //char* filedata = nullptr;
+    //DWORD filesize = 0;
+    //HANDLE hMap = mapFile("C:/Users/SSAFY/Desktop/pcb_zmap_slope_y_defects20_20250512_125502.csv", filedata, filesize);
+    //if (!hMap || !filedata) return -1;
 
     vector<size_t> line_offsets;
     int rows = 0, cols = 0;
@@ -472,6 +508,10 @@ int main() {
     vector<BlobInfo> blobs = detectBlobsAdaptive(binary, rows, cols);
     auto end = chrono::high_resolution_clock::now();
     delete[] binary;
+
+    // 시리얼 넘버 생성
+    string serial_number = generate_serial_number();
+    cout << "<SerialNumber>" << serial_number << "</SerialNumber>" << endl;
 
     outputBlobs(blobs, cols, rows, "C:/Users/SSAFY/Desktop/defect_coordinates_excel.csv");
 
