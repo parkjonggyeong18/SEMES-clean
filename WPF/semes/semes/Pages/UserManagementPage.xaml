@@ -1,93 +1,464 @@
 ﻿<Page x:Class="semes.Pages.UserManagementPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-      mc:Ignorable="d"
       Title="UserManagementPage">
 
-    <Grid>
-        <materialDesign:Card Padding="30" Background="White" Margin="10">
-            <Grid>
+    <Page.Resources>
+        <!-- 하이테크 블루 그라데이션 -->
+        <LinearGradientBrush x:Key="MainBackground" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#E3F2FD" Offset="0"/>
+            <GradientStop Color="#F5F5F5" Offset="1"/>
+        </LinearGradientBrush>
+
+        <!-- 헤더 그라데이션 -->
+        <LinearGradientBrush x:Key="HeaderGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#1976D2" Offset="0"/>
+            <GradientStop Color="#2196F3" Offset="1"/>
+        </LinearGradientBrush>
+
+        <!-- 카드 스타일 -->
+        <Style x:Key="TechCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E1E5E9"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="20"/>
+            <Setter Property="Margin" Value="20"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="#1976D2" BlurRadius="25" ShadowDepth="8" Opacity="0.15"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 모던 텍스트박스 -->
+        <Style x:Key="TechTextBox" TargetType="TextBox">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Grid>
+                            <!-- 배경 효과 -->
+                            <Border Background="#FFFFFF" 
+                                    CornerRadius="10" 
+                                    Opacity="0.95"/>
+
+                            <!-- 테두리 그라데이션 -->
+                            <Border CornerRadius="10" 
+                                    BorderThickness="2">
+                                <Border.BorderBrush>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#1976D2" Offset="0"/>
+                                        <GradientStop Color="#2196F3" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.BorderBrush>
+                            </Border>
+
+                            <!-- 내용 -->
+                            <ScrollViewer x:Name="PART_ContentHost" 
+                                          Margin="15,10"
+                                          VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#2196F3" BlurRadius="10" ShadowDepth="0" Opacity="0.3"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Foreground" Value="#333"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="Segoe UI, Arial"/>
+            <Setter Property="Height" Value="40"/>
+        </Style>
+
+        <!-- 패스워드박스 스타일 -->
+        <Style x:Key="TechPasswordBox" TargetType="PasswordBox">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="PasswordBox">
+                        <Grid>
+                            <!-- 배경 효과 -->
+                            <Border Background="#FFFFFF" 
+                                    CornerRadius="10" 
+                                    Opacity="0.95"/>
+
+                            <!-- 테두리 그라데이션 -->
+                            <Border CornerRadius="10" 
+                                    BorderThickness="2">
+                                <Border.BorderBrush>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#1976D2" Offset="0"/>
+                                        <GradientStop Color="#2196F3" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.BorderBrush>
+                            </Border>
+
+                            <!-- 내용 -->
+                            <ScrollViewer x:Name="PART_ContentHost" 
+                                          Margin="15,10"
+                                          VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#2196F3" BlurRadius="10" ShadowDepth="0" Opacity="0.3"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Foreground" Value="#333"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="Segoe UI, Arial"/>
+            <Setter Property="Height" Value="40"/>
+        </Style>
+
+        <!-- Primary 버튼 스타일 -->
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border" 
+                                CornerRadius="25"
+                                Padding="20,10"
+                                MinWidth="120"
+                                Height="44">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#1976D2" Offset="0"/>
+                                    <GradientStop Color="#2196F3" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <Border.Effect>
+                                <DropShadowEffect Color="#1976D2" BlurRadius="15" ShadowDepth="0" Opacity="0.4"/>
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#1976D2" BlurRadius="20" ShadowDepth="0" Opacity="0.6"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <!-- Danger 버튼 스타일 -->
+        <Style x:Key="DangerButton" TargetType="Button">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border" 
+                                CornerRadius="20"
+                                Padding="15,8"
+                                MinWidth="80"
+                                Height="36">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#D32F2F" Offset="0"/>
+                                    <GradientStop Color="#F44336" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <Border.Effect>
+                                <DropShadowEffect Color="#D32F2F" BlurRadius="10" ShadowDepth="0" Opacity="0.3"/>
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#D32F2F" BlurRadius="15" ShadowDepth="0" Opacity="0.5"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <!-- 사용자 카드 스타일 -->
+        <Style x:Key="UserCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E1E5E9"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="15"/>
+            <Setter Property="Margin" Value="0,5"/>
+            <Setter Property="Padding" Value="20,15"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="#1976D2" BlurRadius="8" ShadowDepth="0" Opacity="0.1"/>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect Color="#1976D2" BlurRadius="15" ShadowDepth="0" Opacity="0.2"/>
+                        </Setter.Value>
+                    </Setter>
+                    <Setter Property="Background">
+                        <Setter.Value>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="#FFFFFF" Offset="0"/>
+                                <GradientStop Color="#F9FAFE" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Page.Resources>
+
+    <Grid Background="{StaticResource MainBackground}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- 헤더 영역 -->
+        <Border Grid.Row="0" Background="{StaticResource HeaderGradient}" Padding="30,25">
+            <Border.Effect>
+                <DropShadowEffect Color="#1976D2" BlurRadius="15" ShadowDepth="3" Opacity="0.3"/>
+            </Border.Effect>
+
+            <StackPanel Orientation="Horizontal">
+                <!-- CPU 칩 아이콘 -->
+                <Border Background="#FFFFFF" 
+                        CornerRadius="50" 
+                        Width="50" 
+                        Height="50" 
+                        Margin="0,0,20,0">
+                    <Grid>
+                        <Rectangle Width="30" Height="30" Fill="#1976D2" RadiusX="3" RadiusY="3"/>
+                        <Rectangle Width="18" Height="18" Fill="White" RadiusX="2" RadiusY="2"/>
+                        <Rectangle Width="6" Height="2" Fill="#1976D2" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                        <Rectangle Width="6" Height="2" Fill="#1976D2" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <Rectangle Width="2" Height="6" Fill="#1976D2" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,10,0,0"/>
+                        <Rectangle Width="2" Height="6" Fill="#1976D2" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,10"/>
+                    </Grid>
+                </Border>
+
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock FontSize="28" 
+                               FontWeight="Bold" 
+                               Foreground="White" 
+                               Text="회원 관리">
+                        <TextBlock.Effect>
+                            <DropShadowEffect Color="#1976D2" BlurRadius="10" ShadowDepth="2" Opacity="0.5"/>
+                        </TextBlock.Effect>
+                    </TextBlock>
+                    <TextBlock FontSize="14" 
+                               Foreground="#E3F2FD" 
+                               Text="SEMES 아산 사업장" 
+                               Margin="0,5,0,0"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- 메인 콘텐츠 영역 -->
+        <ScrollViewer Grid.Row="1" 
+                      VerticalScrollBarVisibility="Auto" 
+                      Padding="30"
+                      Background="Transparent">
+            <Border Style="{StaticResource TechCardStyle}">
+                <Grid Margin="40">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="10"/>
+                        <RowDefinition Height="40"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="회원관리" FontSize="20" FontWeight="Bold" Margin="10 10 0 20"/>
+                    <!-- 회원 추가 섹션 -->
+                    <StackPanel Grid.Row="0" Margin="0,0,0,30">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                            <Border Background="{StaticResource HeaderGradient}" 
+                                    CornerRadius="25" 
+                                    Padding="12,8" 
+                                    Margin="0,0,15,0">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#1976D2" BlurRadius="10" ShadowDepth="0" Opacity="0.3"/>
+                                </Border.Effect>
+                                <!-- 사용자 추가 아이콘 - 간단한 사람 + 플러스 -->
+                                <Grid Width="18" Height="18">
+                                    <!-- 사람 모양 -->
+                                    <Ellipse Width="6" Height="6" Fill="White" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,2"/>
+                                    <Path Fill="White" Data="M4,12 C4,10 6,8 8,8 C10,8 12,10 12,12 L12,14 L4,14 Z" />
+                                    <!-- 플러스 아이콘 -->
+                                    <Rectangle Width="6" Height="2" Fill="White" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,4"/>
+                                    <Rectangle Width="2" Height="6" Fill="White" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="2,1"/>
+                                </Grid>
+                            </Border>
+                            <TextBlock Text="새 회원 추가" 
+                                       FontSize="22" 
+                                       FontWeight="Bold" 
+                                       Foreground="#333"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
 
-                    <!-- 입력 영역 -->
-                    <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="20 0 0 10" >
-                        <TextBox x:Name="txtUserId"
-                                 Width="200"
-                                 Margin="0 0 10 0"
-                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                 materialDesign:HintAssist.Hint="아이디"/>
+                        <!-- 입력 영역 -->
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <!-- 아이디 입력 -->
+                            <StackPanel Margin="0,0,20,0">
+                                <TextBlock Text="아이디" FontSize="14" FontWeight="SemiBold" Foreground="#666" Margin="5,0,0,5"/>
+                                <TextBox x:Name="txtUserId"
+                                         Style="{StaticResource TechTextBox}"
+                                         Width="200"/>
+                            </StackPanel>
 
-                        <PasswordBox x:Name="txtPassword"
-                                     Width="200"
-                                     Margin="10 0 80 0"
-                                     Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
-                                     materialDesign:HintAssist.Hint="비밀번호"/>
+                            <!-- 비밀번호 입력 -->
+                            <StackPanel Margin="0,0,40,0">
+                                <TextBlock Text="비밀번호" FontSize="14" FontWeight="SemiBold" Foreground="#666" Margin="5,0,0,5"/>
+                                <PasswordBox x:Name="txtPassword"
+                                             Style="{StaticResource TechPasswordBox}"
+                                             Width="200"/>
+                            </StackPanel>
 
-                        <Button Content="회원 추가"
-                                Width="100"
-                                Click="AddUser_Click"
-                                Style="{StaticResource MaterialDesignOutlinedButton}" />
+                            <!-- 추가 버튼 -->
+                            <StackPanel Margin="0,20,0,0">
+                                <Button Style="{StaticResource PrimaryButton}"
+                                        Click="AddUser_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <!-- 추가 아이콘 -->
+                                        <Path Fill="White" 
+                                              Data="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"
+                                              Stretch="Uniform"
+                                              Width="16"
+                                              Height="16"
+                                              Margin="0,0,8,0"/>
+                                        <TextBlock Text="회원 추가"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
                     </StackPanel>
 
-                    <!-- 회원 목록 -->
-                    <ListView x:Name="userListView" Grid.Row="3" Margin="10 10 0 0">
-                        <ListView.ItemContainerStyle>
-                            <Style TargetType="ListViewItem">
-                                <Setter Property="Padding" Value="0"/>
-                                <Setter Property="Margin" Value="0"/>
-                                <Setter Property="BorderThickness" Value="0"/>
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                <Setter Property="VerticalContentAlignment" Value="Top"/>
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="ListViewItem">
-                                            <Border x:Name="Border"
-                                Background="Transparent">
-                                                <Grid>
-                                                    <ContentPresenter Margin="5 7"/>
+                    <!-- 회원 목록 섹션 -->
+                    <StackPanel Grid.Row="2">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                            <Border Background="{StaticResource HeaderGradient}" 
+                                    CornerRadius="25" 
+                                    Padding="12,8" 
+                                    Margin="0,0,15,0">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#1976D2" BlurRadius="10" ShadowDepth="0" Opacity="0.3"/>
+                                </Border.Effect>
+                                <!-- 사용자 목록 아이콘 - 간단한 사람들 -->
+                                <Grid Width="18" Height="18">
+                                    <!-- 첫 번째 사람 -->
+                                    <Ellipse Width="5" Height="5" Fill="White" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="2,2"/>
+                                    <Path Fill="White" Data="M0,12 C0,11 1,10 3,10 C5,10 7,11 7,12 L7,14 L0,14 Z" />
+                                    <!-- 두 번째 사람 -->
+                                    <Ellipse Width="5" Height="5" Fill="White" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2"/>
+                                    <Path Fill="White" Data="M11,12 C11,11 12,10 14,10 C16,10 18,11 18,12 L18,14 L11,14 Z" />
+                                </Grid>
+                            </Border>
+                            <TextBlock Text="등록된 회원 목록" 
+                                       FontSize="22" 
+                                       FontWeight="Bold" 
+                                       Foreground="#333"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
 
-                                                    <Border Height="1" Background="#DDD" VerticalAlignment="Bottom"/>
-                                                </Grid>
-                                            </Border>
+                        <!-- 회원 목록 -->
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="400">
+                            <ItemsControl x:Name="userListView">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource UserCardStyle}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="60"/>
+                                                    <ColumnDefinition Width="200"/>
+                                                    <ColumnDefinition Width="200"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="100"/>
+                                                </Grid.ColumnDefinitions>
 
-                                            <!-- 호버 및 선택 효과 -->
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="Border" Property="Background" Value="#f5f5f5"/>
-                                                </Trigger>
-                                                <Trigger Property="IsSelected" Value="True">
-                                                    <Setter TargetName="Border" Property="Background" Value="#e0e0e0"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </ListView.ItemContainerStyle>
+                                                <!-- 아바타 -->
+                                                <Border Grid.Column="0" 
+                                                        Background="{StaticResource HeaderGradient}" 
+                                                        CornerRadius="30" 
+                                                        Width="45" 
+                                                        Height="45"
+                                                        HorizontalAlignment="Center">
+                                                    <Border.Effect>
+                                                        <DropShadowEffect Color="#1976D2" BlurRadius="5" ShadowDepth="0" Opacity="0.3"/>
+                                                    </Border.Effect>
+                                                    <Grid Width="20" Height="20">
+                                                        <!-- 간단한 사용자 실루엣 -->
+                                                        <Ellipse Width="8" Height="8" Fill="White" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,2"/>
+                                                        <Path Fill="White" Data="M4,15 C4,12 6,11 10,11 C14,11 16,12 16,15 L16,18 L4,18 Z" />
+                                                    </Grid>
+                                                </Border>
 
-                        <ListView.ItemTemplate>
-                            <DataTemplate>
-                                <DockPanel LastChildFill="False" Margin="10 5">
-                                    <TextBlock Text="{Binding Username}" Width="200" VerticalAlignment="Center"/>
-                                    <TextBlock Text="{Binding Password}" Width="200" VerticalAlignment="Center" Margin="20 0 80 0"/>
-                                    <Button Content="삭제" Tag="{Binding}" Click="DeleteUser_Click"
-                                        Width="60" Style="{StaticResource MaterialDesignOutlinedButton}" />
-                                </DockPanel>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
+                                                <!-- 아이디 -->
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="15,0,0,0">
+                                                    <TextBlock Text="아이디" FontSize="12" Foreground="#999" Margin="0,0,0,2"/>
+                                                    <TextBlock Text="{Binding Username}" 
+                                                               FontSize="16" 
+                                                               FontWeight="SemiBold"
+                                                               Foreground="#333"/>
+                                                </StackPanel>
 
+                                                <!-- 비밀번호 -->
+                                                <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="15,0,0,0">
+                                                    <TextBlock Text="비밀번호" FontSize="12" Foreground="#999" Margin="0,0,0,2"/>
+                                                    <TextBlock Text="{Binding Password}" 
+                                                               FontSize="16" 
+                                                               FontWeight="SemiBold"
+                                                               Foreground="#333"/>
+                                                </StackPanel>
+
+                                                <!-- 삭제 버튼 -->
+                                                <Button Grid.Column="4" 
+                                                        Style="{StaticResource DangerButton}"
+                                                        Tag="{Binding}" 
+                                                        Click="DeleteUser_Click"
+                                                        HorizontalAlignment="Right">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <!-- 삭제 아이콘 -->
+                                                        <Path Fill="White" 
+                                                              Data="M19 4h-3.5l-1-1h-5l-1 1H5v2h14M6 19a2 2 0 002 2h8a2 2 0 002-2V7H6v12z"
+                                                              Stretch="Uniform"
+                                                              Width="14"
+                                                              Height="14"
+                                                              Margin="0,0,5,0"/>
+                                                        <TextBlock Text="삭제"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </StackPanel>
                 </Grid>
-            </materialDesign:Card>
-        </Grid>
+            </Border>
+        </ScrollViewer>
+    </Grid>
 </Page>
