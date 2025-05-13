@@ -15,6 +15,8 @@ using System.Xml.Serialization;
 using System.IO;
 using System.Windows.Input;
 
+using semes.Services;
+
 namespace semes
 {
     //<summary>
@@ -672,61 +674,6 @@ namespace semes
             });
         }
         #endregion
-
-
-        // 결과 내보내기 버튼 클릭 이벤트
-        private void ExportResult_Click(object sender, EventArgs e)
-        {
-            // 내보낼 데이터가 있는지 확인
-            if (defectItems == null || defectItems.Count == 0)
-            {
-                MessageBox.Show("내보낼 검출 결과가 없습니다", "알림", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-
-            try
-            {
-                // 저장할 대화 상자 생성
-                Microsoft.Win32.SaveFileDialog saveDialog = new Microsoft.Win32.SaveFileDialog
-                {
-                    Filter = "CSV 파일 (*.csv)|*.csv",
-                    DefaultExt = ".csv",
-                    FileName = $"불량검출결과_{DateTime.Now:yyyyMMdd_HHmmss}"
-                };
-
-                // 대화 상자 표시 및 결과 확인
-                bool? result = saveDialog.ShowDialog();
-
-                // 사용자가 저장을 선택한 경우
-                if (result == true) {
-                    // 선택한 파일 경로로 CSV파일 생성
-                    ExportToCsv(saveDialog.FileName);
-                    // 성공 메세지 표시
-                    MessageBox.Show("결과가 성공적으로 내보내졌습니다.", "완료", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-            }
-            catch (Exception ex) 
-            {
-                MessageBox.Show($"결과 내보내기 중 오류가 발생했습니다.: {ex.Message}", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        // CSV 파일 내보내기 
-        private void ExportToCsv(string filePath)
-        {
-            // CSV 파일 생성
-            using (StreamWriter writer = new StreamWriter(filePath, false, Encoding.UTF8))
-            {
-                // 헤더
-                writer.WriteLine("ID,X좌표,Y좌표,너비(um),높이(um)");
-
-                // 각 불량 항목에 대한 데이터 작성
-                foreach (var defect in defectItems)
-                {
-                    writer.WriteLine($"{defect.Id},{defect.X},{defect.Y},{defect.Width},{defect.Height}");
-                }
-            }
-        }
 
         // 마우스 휠 이벤트 핸들러 - 확대/축소 기능
         private void PCBContainer_MouseWheel(object sender, MouseWheelEventArgs e)
