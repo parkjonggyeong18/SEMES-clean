@@ -13,6 +13,7 @@ using System.Windows.Shapes;
 using System.Xml;
 using System.Xml.Serialization;
 using System.IO;
+using System.Windows.Input;
 
 namespace semes
 {
@@ -41,6 +42,8 @@ namespace semes
 
             // PCBImage가 로드될 때 실행될 함수
             PCBImage.Loaded += PCBImage_Loaded;
+
+            PCBContainer.MouseWheel += PCBContainer_MouseWheel;
         }
         private void CreateSampleDefects()
         {
@@ -138,7 +141,7 @@ namespace semes
             double displayY = defect.Y * scaleY;
 
             // 크기에 따라 표시 크기 조정
-            double sizeMultiplier = 0.5;
+            double sizeMultiplier = 5;
             double displaySize = Math.Max(defect.Width * sizeMultiplier, 10);
 
             // 불량 마커 생성
@@ -146,9 +149,9 @@ namespace semes
             {
                 Width = displaySize,
                 Height = displaySize,
-                Fill = new SolidColorBrush(Colors.Red) { Opacity = 0.5 },
+                Fill = new SolidColorBrush(Colors.Red) { Opacity = sizeMultiplier },
                 Stroke = new SolidColorBrush(Colors.Yellow),
-                StrokeThickness = 2,
+                StrokeThickness = 10,
                 Tag = defect
             };
 
@@ -524,7 +527,7 @@ namespace semes
                     if (item is Ellipse ellipse)
                     {
                         ellipse.Stroke = new SolidColorBrush(Colors.Yellow);
-                        ellipse.StrokeThickness = 2;
+                        ellipse.StrokeThickness = 10;
                     }
                 }
 
@@ -532,7 +535,7 @@ namespace semes
                 if (marker is Ellipse selectedEllipse)
                 {
                     selectedEllipse.Stroke = new SolidColorBrush(Colors.Lime);
-                    selectedEllipse.StrokeThickness = 3;
+                    selectedEllipse.StrokeThickness = 40;
                 }
             }
         }
@@ -612,6 +615,25 @@ namespace semes
                 {
                     writer.WriteLine($"{defect.Id},{defect.X},{defect.Y},{defect.Width},{defect.Height}");
                 }
+            }
+        }
+
+        // 마우스 휠 이벤트 핸들러 - 확대/축소 기능
+        private void PCBContainer_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            // Ctrl 키를 누른 상태에서 마우스 휠을 사용할 때만 확대/축소 (선택 사항)
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                double zoom = e.Delta > 0 ? 0.1 : -0.1;
+
+                // 최소/최대 확대/축소 제한 (예: 0.055배~5배)
+                double newZoom = Math.Max(0.055, Math.Min(5, PCBScaleTransform.ScaleX + zoom));
+
+                // 확대/축소 적용
+                PCBScaleTransform.ScaleX = newZoom;
+                PCBScaleTransform.ScaleY = newZoom;
+
+                e.Handled = true;
             }
         }
 
