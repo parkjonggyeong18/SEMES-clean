@@ -13,7 +13,7 @@ using System.Windows.Shapes;
 using System.Xml;
 using System.Xml.Serialization;
 using System.IO;
-using semes.Services;
+using System.Windows.Input;
 
 namespace semes
 {
@@ -51,6 +51,8 @@ namespace semes
 
             // PCBImage가 로드될 때 실행될 함수
             PCBImage.Loaded += PCBImage_Loaded;
+
+            PCBContainer.MouseWheel += PCBContainer_MouseWheel;
         }
 
         #region PCB 이미지 로딩 콜백
@@ -139,7 +141,7 @@ namespace semes
             double displayY = defect.Y * scaleY;
 
             // 크기에 따라 표시 크기 조정
-            double sizeMultiplier = 0.5;
+            double sizeMultiplier = 5;
             double displaySize = Math.Max(defect.Width * sizeMultiplier, 10);
 
             // 불량 마커 생성
@@ -147,9 +149,9 @@ namespace semes
             {
                 Width = displaySize,
                 Height = displaySize,
-                Fill = new SolidColorBrush(Colors.Red) { Opacity = 0.5 },
+                Fill = new SolidColorBrush(Colors.Red) { Opacity = sizeMultiplier },
                 Stroke = new SolidColorBrush(Colors.Yellow),
-                StrokeThickness = 2,
+                StrokeThickness = 10,
                 Tag = defect
             };
 
@@ -637,7 +639,7 @@ namespace semes
                     if (item is Ellipse ellipse)
                     {
                         ellipse.Stroke = new SolidColorBrush(Colors.Yellow);
-                        ellipse.StrokeThickness = 2;
+                        ellipse.StrokeThickness = 10;
                     }
                 }
 
@@ -645,7 +647,7 @@ namespace semes
                 if (marker is Ellipse selectedEllipse)
                 {
                     selectedEllipse.Stroke = new SolidColorBrush(Colors.Lime);
-                    selectedEllipse.StrokeThickness = 3;
+                    selectedEllipse.StrokeThickness = 40;
                 }
             }
         }
@@ -671,7 +673,80 @@ namespace semes
         }
         #endregion
 
-        
+
+        // 결과 내보내기 버튼 클릭 이벤트
+        private void ExportResult_Click(object sender, EventArgs e)
+        {
+            // 내보낼 데이터가 있는지 확인
+            if (defectItems == null || defectItems.Count == 0)
+            {
+                MessageBox.Show("내보낼 검출 결과가 없습니다", "알림", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            try
+            {
+                // 저장할 대화 상자 생성
+                Microsoft.Win32.SaveFileDialog saveDialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Filter = "CSV 파일 (*.csv)|*.csv",
+                    DefaultExt = ".csv",
+                    FileName = $"불량검출결과_{DateTime.Now:yyyyMMdd_HHmmss}"
+                };
+
+                // 대화 상자 표시 및 결과 확인
+                bool? result = saveDialog.ShowDialog();
+
+                // 사용자가 저장을 선택한 경우
+                if (result == true) {
+                    // 선택한 파일 경로로 CSV파일 생성
+                    ExportToCsv(saveDialog.FileName);
+                    // 성공 메세지 표시
+                    MessageBox.Show("결과가 성공적으로 내보내졌습니다.", "완료", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex) 
+            {
+                MessageBox.Show($"결과 내보내기 중 오류가 발생했습니다.: {ex.Message}", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // CSV 파일 내보내기 
+        private void ExportToCsv(string filePath)
+        {
+            // CSV 파일 생성
+            using (StreamWriter writer = new StreamWriter(filePath, false, Encoding.UTF8))
+            {
+                // 헤더
+                writer.WriteLine("ID,X좌표,Y좌표,너비(um),높이(um)");
+
+                // 각 불량 항목에 대한 데이터 작성
+                foreach (var defect in defectItems)
+                {
+                    writer.WriteLine($"{defect.Id},{defect.X},{defect.Y},{defect.Width},{defect.Height}");
+                }
+            }
+        }
+
+        // 마우스 휠 이벤트 핸들러 - 확대/축소 기능
+        private void PCBContainer_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            // Ctrl 키를 누른 상태에서 마우스 휠을 사용할 때만 확대/축소 (선택 사항)
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                double zoom = e.Delta > 0 ? 0.1 : -0.1;
+
+                // 최소/최대 확대/축소 제한 (예: 0.055배~5배)
+                double newZoom = Math.Max(0.055, Math.Min(5, PCBScaleTransform.ScaleX + zoom));
+
+                // 확대/축소 적용
+                PCBScaleTransform.ScaleX = newZoom;
+                PCBScaleTransform.ScaleY = newZoom;
+
+                e.Handled = true;
+            }
+        }
+
         // 불량 항목 클래스
         public class DefectItem
         {

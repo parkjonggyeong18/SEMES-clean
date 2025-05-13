@@ -57,20 +57,29 @@
 
         <!-- PCB 이미지 표시 영역 -->
         <Border Grid.Row="1" Grid.Column="0" BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="1" Margin="10,0,10,10">
-            <!-- Grid를 사용하여 이미지와 Canvas를 겹침 -->
-            <Grid x:Name="PCBContainer">
-                <!-- PCB 이미지 - 원래 스타일 유지 -->
-                <Image x:Name="PCBImage" Stretch="Uniform">
-                    <Image.Style>
-                        <Style TargetType="Image">
-                            <Setter Property="Source" Value="/semes;component/Resources/pcb_with_dies.tif"/>
-                        </Style>
-                    </Image.Style>
-                </Image>
+            <ScrollViewer x:Name="PCBScrollViewer" 
+                  HorizontalScrollBarVisibility="Auto" 
+                  VerticalScrollBarVisibility="Auto"
+                  PanningMode="Both">
+                <Grid x:Name="PCBContainer" ClipToBounds="True">
+                    <!-- 확대/축소를 위한 ScaleTransform 추가 -->
+                    <Grid.LayoutTransform>
+                        <ScaleTransform x:Name="PCBScaleTransform" ScaleX="1" ScaleY="1"/>
+                    </Grid.LayoutTransform>
 
-                <!-- 불량 위치 표시를 위한 Canvas - 투명 배경 -->
-                <Canvas x:Name="DefectCanvas" Background="Transparent"/>
-            </Grid>
+                    <Image x:Name="PCBImage" Stretch="None">
+                        <Image.Style>
+                            <Style TargetType="Image">
+                                <Setter Property="Source" Value="/semes;component/Resources/pcb_with_dies.tif"/>
+                            </Style>
+                        </Image.Style>
+                    </Image>
+
+                    <Canvas x:Name="DefectCanvas" Background="Transparent" 
+                    Width="{Binding ActualWidth, ElementName=PCBImage}" 
+                    Height="{Binding ActualHeight, ElementName=PCBImage}"/>
+                </Grid>
+            </ScrollViewer>
         </Border>
 
         <!-- 오른쪽 정보 패널 -->
