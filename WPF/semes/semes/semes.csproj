@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>semes_icon_cropped.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +18,10 @@
     <None Remove="Resources\pcb_with_dies.tif" />
     <None Remove="Resources\semes_comp.png" />
     <None Remove="Resources\semes_logo.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="semes_icon_cropped.ico" />
   </ItemGroup>
 
   <ItemGroup>
