@@ -12,6 +12,7 @@
 
     <Grid>
         <!-- 상단 차트 영역 -->
+        
         <Grid Margin="10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -23,103 +24,69 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="300"/>
             </Grid.ColumnDefinitions>
-
-            <!-- 불량률 차트 -->
-            <materialDesign:Card Grid.Row="0" Grid.Column="0" Margin="0,0,10,10" Padding="15">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <TextBlock Grid.Row="0" 
-                               Text="불량률" 
-                               Style="{StaticResource MaterialDesignHeadline6TextBlock}"
-                               Margin="0,0,0,10"/>
-
-                    <lvc:CartesianChart Grid.Row="1" 
-                                       Series="{Binding DefectRateCollection}"
-                                       DisableAnimations="False"
-                                       Height="200">
-                        <lvc:CartesianChart.AxisY>
-                            <lvc:Axis Title="불량률 (%)" 
-                                      LabelFormatter="{Binding YFormatter}"
-                                      MinValue="0"/>
-                        </lvc:CartesianChart.AxisY>
-                        <lvc:CartesianChart.AxisX>
-                            <lvc:Axis Labels="{Binding DateLabels}"/>
-                        </lvc:CartesianChart.AxisX>
-                        <lvc:CartesianChart.DataTooltip>
-                            <lvc:DefaultTooltip SelectionMode="SharedXValues"/>
-                        </lvc:CartesianChart.DataTooltip>
-                    </lvc:CartesianChart>
-                </Grid>
-            </materialDesign:Card>
-
-            <!-- 불량 수 차트 -->
-            <materialDesign:Card Grid.Row="1" Grid.Column="0" Margin="0,0,10,10" Padding="15">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <TextBlock Grid.Row="0" 
-                               Text="불량 수" 
-                               Style="{StaticResource MaterialDesignHeadline6TextBlock}"
-                               Margin="0,0,0,10"/>
-
-                    <lvc:CartesianChart Grid.Row="1" 
-                                       Series="{Binding DefectCountCollection}"
-                                       DisableAnimations="False"
-                                       Height="200">
-                        <lvc:CartesianChart.AxisY>
-                            <lvc:Axis Title="불량 수 (개)"
-                                      MinValue="0"/>
-                        </lvc:CartesianChart.AxisY>
-                        <lvc:CartesianChart.AxisX>
-                            <lvc:Axis Labels="{Binding DateLabels}"/>
-                        </lvc:CartesianChart.AxisX>
-                    </lvc:CartesianChart>
-                </Grid>
-            </materialDesign:Card>
-
-            <!-- 불량 위치 시각화 -->
-            <materialDesign:Card Grid.Row="2" Grid.Column="0" Margin="0,0,10,10" Padding="15">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <TextBlock Grid.Row="0" 
-                               Text="불량 위치" 
-                               Style="{StaticResource MaterialDesignHeadline6TextBlock}"
-                               Margin="0,0,0,10"/>
-
-                    <!-- PCB 불량 위치 표시 영역 -->
-                    <Border Grid.Row="1" 
-                           BorderBrush="{DynamicResource MaterialDesignDivider}" 
-                           BorderThickness="1">
-                        <Grid x:Name="DefectPositionGrid">
-                            <!-- PCB 영역을 표시하는 격자 -->
-                            <UniformGrid Rows="6" Columns="18">
-                                <!-- 각 셀은 PCB의 한 구역을 나타냄 -->
-                                <!-- 여기에 소켓 위치와 불량 표시가 동적으로 추가됩니다 -->
-                            </UniformGrid>
+            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <!-- 불량률 차트 -->
+                    <materialDesign:Card Grid.Row="0" Grid.Column="0" Margin="0,0,10,10" Padding="15">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="불량률" Style="{StaticResource MaterialDesignHeadline6TextBlock}" Margin="0,0,0,10"/>
+                            <lvc:CartesianChart Grid.Row="1" Series="{Binding DefectRateCollection}" DisableAnimations="False" Height="200">
+                                <lvc:CartesianChart.AxisY>
+                                    <lvc:Axis Title="불량률 (%)" LabelFormatter="{Binding YFormatter}" MinValue="0"/>
+                                </lvc:CartesianChart.AxisY>
+                                <lvc:CartesianChart.AxisX>
+                                    <lvc:Axis Labels="{Binding DateLabels}"/>
+                                </lvc:CartesianChart.AxisX>
+                                <lvc:CartesianChart.DataTooltip>
+                                    <lvc:DefaultTooltip SelectionMode="SharedXValues"/>
+                                </lvc:CartesianChart.DataTooltip>
+                            </lvc:CartesianChart>
                         </Grid>
-                    </Border>
-                </Grid>
-            </materialDesign:Card>
+                    </materialDesign:Card>
 
+                    <!-- 불량 수 차트 -->
+                    <materialDesign:Card Grid.Row="1" Grid.Column="0" Margin="0,0,10,10" Padding="15">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="불량 수" Style="{StaticResource MaterialDesignHeadline6TextBlock}" Margin="0,0,0,10"/>
+                            <lvc:CartesianChart Grid.Row="1" Series="{Binding DefectCountCollection}" DisableAnimations="False" Height="200">
+                                <lvc:CartesianChart.AxisY>
+                                    <lvc:Axis Title="불량 수 (개)" MinValue="0"/>
+                                </lvc:CartesianChart.AxisY>
+                                <lvc:CartesianChart.AxisX>
+                                    <lvc:Axis Labels="{Binding DateLabels}"/>
+                                </lvc:CartesianChart.AxisX>
+                            </lvc:CartesianChart>
+                        </Grid>
+                    </materialDesign:Card>
+
+                    <!-- 불량 위치 시각화 -->
+                    <materialDesign:Card Grid.Row="2" Grid.Column="0" Margin="0,0,10,10" Padding="15">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="불량 위치" Style="{StaticResource MaterialDesignHeadline6TextBlock}" Margin="0,0,0,10"/>
+                            <Border Grid.Row="1" BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="1">
+                                <!-- C#에서 UniformGrid를 동적으로 추가할 빈 Grid -->
+                                <Grid x:Name="DefectPositionGrid"/>
+                            </Border>
+                        </Grid>
+                    </materialDesign:Card>
+                </StackPanel>
+            </ScrollViewer>
             <!-- 오른쪽 정보 패널 -->
             <materialDesign:Card Grid.Row="0" Grid.RowSpan="3" Grid.Column="1" Margin="0,0,0,10" Padding="16">
                 <StackPanel>
-                    <!-- 검사 이력 -->
-                    <TextBlock Style="{StaticResource MaterialDesignHeadline6TextBlock}" 
-                               Text="검사이력" 
-                               Margin="0,0,0,16"/>
-
+                    <TextBlock Text="검사이력" Style="{StaticResource MaterialDesignHeadline6TextBlock}" Margin="0,0,0,16"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -132,39 +99,31 @@
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="검사 수:" Margin="0,0,10,8"/>
-                        <TextBlock Grid.Row="0" Grid.Column="1" Text="214 건" Margin="0,0,0,8" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="검사수Text" Grid.Row="0" Grid.Column="1" Text="0 건" Margin="0,0,0,8" FontWeight="SemiBold"/>
 
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="양품 수:" Margin="0,0,10,8"/>
-                        <TextBlock Grid.Row="1" Grid.Column="1" Text="145 건" Margin="0,0,0,8" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="양품수Text" Grid.Row="1" Grid.Column="1" Text="0 건" Margin="0,0,0,8" FontWeight="SemiBold"/>
 
                         <TextBlock Grid.Row="2" Grid.Column="0" Text="불량 수:" Margin="0,0,10,8"/>
-                        <TextBlock Grid.Row="2" Grid.Column="1" Text="68 건" Margin="0,0,0,8" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="불량수Text" Grid.Row="2" Grid.Column="1" Text="0 건" Margin="0,0,0,8" FontWeight="SemiBold"/>
                     </Grid>
 
-                    <!-- 달력 -->
-                    <TextBlock Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
-                               Text="날짜 선택" 
-                               Margin="0,16,0,8"/>
+                    <TextBlock Text="날짜 선택" Style="{StaticResource MaterialDesignSubtitle1TextBlock}" Margin="0,16,0,8"/>
+                    <Calendar x:Name="DefectCalendar" SelectedDatesChanged="DefectCalendar_SelectedDatesChanged" Language="ko"/>
 
-                    <Calendar x:Name="DefectCalendar" 
-                              SelectedDatesChanged="DefectCalendar_SelectedDatesChanged"
-                              Language="ko"/>
-
-                    <!-- 추가 필터 옵션 -->
+                    <!-- 필터 옵션 -->
                     <Expander Header="상세 필터" Margin="0,16,0,0">
                         <StackPanel Margin="0,8,0,0">
-                            <ComboBox materialDesign:HintAssist.Hint="PCB 모델"
-                                      Margin="0,8,0,0"
-                                      Style="{StaticResource MaterialDesignOutlinedComboBox}">
+                            <ComboBox materialDesign:HintAssist.Hint="PCB 모델" Margin="0,8,0,0"
+                                  Style="{StaticResource MaterialDesignOutlinedComboBox}">
                                 <ComboBoxItem Content="모든 모델"/>
                                 <ComboBoxItem Content="A-100"/>
                                 <ComboBoxItem Content="B-200"/>
                                 <ComboBoxItem Content="C-300"/>
                             </ComboBox>
 
-                            <ComboBox materialDesign:HintAssist.Hint="결함 유형"
-                                      Margin="0,16,0,0"
-                                      Style="{StaticResource MaterialDesignOutlinedComboBox}">
+                            <ComboBox materialDesign:HintAssist.Hint="결함 유형" Margin="0,16,0,0"
+                                  Style="{StaticResource MaterialDesignOutlinedComboBox}">
                                 <ComboBoxItem Content="모든 결함"/>
                                 <ComboBoxItem Content="단락"/>
                                 <ComboBoxItem Content="개방"/>
@@ -172,13 +131,12 @@
                                 <ComboBoxItem Content="이물질"/>
                             </ComboBox>
 
-                            <Button Margin="0,16,0,0"
-                                    Style="{StaticResource MaterialDesignOutlinedButton}"
-                                    Content="필터 적용"/>
+                            <Button Content="필터 적용" Margin="0,16,0,0" Style="{StaticResource MaterialDesignOutlinedButton}"/>
                         </StackPanel>
                     </Expander>
                 </StackPanel>
             </materialDesign:Card>
         </Grid>
     </Grid>
+
 </Page>
