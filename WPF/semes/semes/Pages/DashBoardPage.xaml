@@ -15,12 +15,13 @@
             <ColumnDefinition Width="300"/>
         </Grid.ColumnDefinitions>
 
-        <!-- 왼쪽 차트 영역 -->
+        <!-- 왼쪽 차트 + 표 영역 -->
         <Grid Grid.Column="0" Margin="10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="200"/>
             </Grid.RowDefinitions>
 
             <!-- 원형 차트 영역 -->
@@ -32,75 +33,43 @@
 
                 <!-- 전체 불량률 차트 -->
                 <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                    <TextBlock Text="전체 불량률" 
+                    <TextBlock Text="전체 불량률 (누적 기준)" 
                                Style="{StaticResource MaterialDesignHeadline6TextBlock}"
                                HorizontalAlignment="Center" 
                                Margin="0,0,0,20"/>
-
                     <Grid Width="200" Height="200">
-                        <Ellipse Stroke="{DynamicResource MaterialDesignDivider}" 
-                                 StrokeThickness="20" 
-                                 Fill="Transparent"/>
-
-                        <Path Stroke="#29B6F6" 
-                              StrokeThickness="20" 
-                              StrokeStartLineCap="Round" 
-                              StrokeEndLineCap="Round">
-                            <Path.Data>
-                                <PathGeometry>
-                                    <PathFigure StartPoint="100,20">
-                                        <ArcSegment Size="80,80" 
-                                                   IsLargeArc="False" 
-                                                   SweepDirection="Clockwise" 
-                                                   Point="180,100"/>
-                                    </PathFigure>
-                                </PathGeometry>
-                            </Path.Data>
-                        </Path>
-
-                        <TextBlock Text="62%" 
-                                   Style="{StaticResource MaterialDesignHeadline4TextBlock}"
-                                   HorizontalAlignment="Center" 
-                                   VerticalAlignment="Center"/>
+                        <Ellipse Stroke="{DynamicResource MaterialDesignDivider}" StrokeThickness="20" Fill="Transparent"/>
+                        <Path x:Name="DefectRatePath" Stroke="#29B6F6" StrokeThickness="20" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                        <TextBlock x:Name="DefectRateText" Text="0%" Style="{StaticResource MaterialDesignHeadline4TextBlock}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Grid>
                 </StackPanel>
 
                 <!-- 불량 검출 차트 -->
                 <StackPanel Grid.Column="1" HorizontalAlignment="Center">
-                    <TextBlock Text="불량 검출" 
+                    <TextBlock Text="불량률 (선택 날짜 기준)" 
                                Style="{StaticResource MaterialDesignHeadline6TextBlock}"
                                HorizontalAlignment="Center" 
                                Margin="0,0,0,20"/>
-
                     <Grid Width="200" Height="200">
-                        <Ellipse Stroke="{DynamicResource MaterialDesignDivider}" 
-                                 StrokeThickness="20" 
-                                 Fill="Transparent"/>
-
-                        <Path Stroke="#F44336" 
-                              StrokeThickness="20" 
-                              StrokeStartLineCap="Round" 
-                              StrokeEndLineCap="Round">
-                            <Path.Data>
-                                <PathGeometry>
-                                    <PathFigure StartPoint="100,20">
-                                        <ArcSegment Size="80,80" 
-                                                   IsLargeArc="False" 
-                                                   SweepDirection="Clockwise" 
-                                                   Point="140,170"/>
-                                    </PathFigure>
-                                </PathGeometry>
-                            </Path.Data>
-                        </Path>
-
-                        <TextBlock Text="34%" 
-                                   Style="{StaticResource MaterialDesignHeadline4TextBlock}"
-                                   HorizontalAlignment="Center" 
-                                   VerticalAlignment="Center"/>
+                        <Ellipse Stroke="{DynamicResource MaterialDesignDivider}" StrokeThickness="20" Fill="Transparent"/>
+                        <Path x:Name="DefectDetectionPath" Stroke="#F44336" StrokeThickness="20" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                        <TextBlock x:Name="DefectDetectionText" Text="0%" Style="{StaticResource MaterialDesignHeadline4TextBlock}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Grid>
                 </StackPanel>
             </Grid>
 
+            <!-- 검사 내역 테이블 -->
+            <DataGrid x:Name="InspectionTable" Grid.Row="3" AutoGenerateColumns="False" HeadersVisibility="Column"
+           IsReadOnly="True" CanUserResizeRows="False" SelectionMode="Single">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="PCB ID" Binding="{Binding PcbId}" Width="*" />
+                    <DataGridTextColumn Header="검사 일시" Binding="{Binding InspectionDate}" Width="2*" />
+                    <DataGridTextColumn Header="시리얼 번호" Binding="{Binding SerialNumber}" Width="2*" />
+                    <DataGridTextColumn Header="불량 수" Binding="{Binding DefectCount}" Width="*" />
+                    <DataGridTextColumn Header="양품 여부" Binding="{Binding IsGood}" Width="*" />
+                </DataGrid.Columns>
+            </DataGrid>
+            
             <!-- 통계 정보 -->
             <StackPanel Grid.Row="2" Margin="20">
                 <Grid Margin="0,10">
@@ -108,13 +77,8 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <materialDesign:PackIcon Kind="ChartLineVariant" 
-                                           Foreground="#E53935"
-                                           VerticalAlignment="Center" 
-                                           Margin="0,0,10,0"/>
-                    <TextBlock Grid.Column="1" 
-                               Text="지난 7일 평균 불량률: 29%" 
-                               VerticalAlignment="Center"/>
+                    <materialDesign:PackIcon Kind="ChartLineVariant" Foreground="#E53935" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock x:Name="지난7일평균불량률Text" Grid.Column="1" Text="지난 7일 평균 불량률: -" VerticalAlignment="Center"/>
                 </Grid>
 
                 <Grid Margin="0,10">
@@ -122,39 +86,18 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <materialDesign:PackIcon Kind="TrendingUp" 
-                                           Foreground="#2196F3"
-                                           VerticalAlignment="Center" 
-                                           Margin="0,0,10,0"/>
-                    <TextBlock Grid.Column="1" 
-                               Text="전일 대비: 5% 상승" 
-                               VerticalAlignment="Center"/>
-                </Grid>
-
-                <Grid Margin="0,20,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <materialDesign:PackIcon Kind="Alert" 
-                                           Foreground="#FFC107"
-                                           VerticalAlignment="Center" 
-                                           Margin="0,0,10,0"/>
-                    <TextBlock Grid.Column="1" 
-                               Text="전체 불량률이 기준치(60%)를 초과했습니다." 
-                               VerticalAlignment="Center"
-                               Foreground="#FFC107"/>
+                    <materialDesign:PackIcon Kind="TrendingUp" Foreground="#2196F3" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock x:Name="전일대비Text" Grid.Column="1" Text="전일 대비: -" VerticalAlignment="Center"/>
                 </Grid>
             </StackPanel>
+
+           
         </Grid>
 
         <!-- 오른쪽 정보 패널 -->
         <materialDesign:Card Grid.Column="1" Margin="0,10,10,10">
             <StackPanel Margin="16">
-                <TextBlock Style="{StaticResource MaterialDesignHeadline6TextBlock}" 
-                           Text="검사이력" 
-                           Margin="0,0,0,16"/>
-
+                <TextBlock Style="{StaticResource MaterialDesignHeadline6TextBlock}" Text="검사이력" Margin="0,0,0,16"/>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -167,17 +110,15 @@
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="검사 수:" Margin="0,0,10,8"/>
-                    <TextBlock Grid.Row="0" Grid.Column="1" Text="214 건" Margin="0,0,0,8" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="검사수Text" Grid.Row="0" Grid.Column="1" Text="0 건" Margin="0,0,0,8" FontWeight="SemiBold"/>
 
                     <TextBlock Grid.Row="1" Grid.Column="0" Text="양품 수:" Margin="0,0,10,8"/>
-                    <TextBlock Grid.Row="1" Grid.Column="1" Text="145 건" Margin="0,0,0,8" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="양품수Text" Grid.Row="1" Grid.Column="1" Text="0 건" Margin="0,0,0,8" FontWeight="SemiBold"/>
 
                     <TextBlock Grid.Row="2" Grid.Column="0" Text="불량 수:" Margin="0,0,10,8"/>
-                    <TextBlock Grid.Row="2" Grid.Column="1" Text="68 건" Margin="0,0,0,8" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="불량수Text" Grid.Row="2" Grid.Column="1" Text="0 건" Margin="0,0,0,8" FontWeight="SemiBold"/>
                 </Grid>
-
-                <!-- 달력 -->
-                <Calendar Margin="0,20,0,0" Language="ko"/>
+                <Calendar x:Name="DefectCalendar" Margin="0,20,0,0" Language="ko" SelectedDatesChanged="DefectCalendar_SelectedDatesChanged"/>
             </StackPanel>
         </materialDesign:Card>
     </Grid>
