@@ -9,117 +9,153 @@
       d:DesignHeight="650" d:DesignWidth="1050"
       Title="DashboardPage">
 
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="300"/>
-        </Grid.ColumnDefinitions>
+    <Page.Resources>
+        <LinearGradientBrush x:Key="MainBackground" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#E3F2FD" Offset="0"/>
+            <GradientStop Color="#F5F5F5" Offset="1"/>
+        </LinearGradientBrush>
 
-        <!-- 왼쪽 차트 + 표 영역 -->
-        <Grid Grid.Column="0" Margin="10">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="200"/>
-            </Grid.RowDefinitions>
+        <LinearGradientBrush x:Key="HeaderGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#1976D2" Offset="0"/>
+            <GradientStop Color="#2196F3" Offset="1"/>
+        </LinearGradientBrush>
 
-            <!-- 원형 차트 영역 -->
-            <Grid Grid.Row="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+        <Style x:Key="TechCardStyle" TargetType="materialDesign:Card">
+            <Setter Property="Margin" Value="10"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="Background" Value="White"/>
 
-                <!-- 전체 불량률 차트 -->
-                <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                    <TextBlock Text="전체 불량률 (누적 기준)" 
-                               Style="{StaticResource MaterialDesignHeadline6TextBlock}"
-                               HorizontalAlignment="Center" 
-                               Margin="0,0,0,20"/>
-                    <Grid Width="200" Height="200">
-                        <Ellipse Stroke="{DynamicResource MaterialDesignDivider}" StrokeThickness="20" Fill="Transparent"/>
-                        <Path x:Name="DefectRatePath" Stroke="#29B6F6" StrokeThickness="20" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
-                        <TextBlock x:Name="DefectRateText" Text="0%" Style="{StaticResource MaterialDesignHeadline4TextBlock}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Style>
+    </Page.Resources>
+
+    <Grid Background="{StaticResource MainBackground}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- 헤더 영역 -->
+        <Border Grid.Row="0" Background="{StaticResource HeaderGradient}" Padding="30,20">
+            <Border.Effect>
+                <DropShadowEffect Color="#1976D2" BlurRadius="15" ShadowDepth="3" Opacity="0.3"/>
+            </Border.Effect>
+            <StackPanel Orientation="Horizontal">
+                <Border Background="#FFFFFF" CornerRadius="50" Width="50" Height="50" Margin="0,0,20,0">
+                    <Grid>
+                        <Rectangle Width="30" Height="30" Fill="#1976D2" RadiusX="3" RadiusY="3"/>
+                        <Rectangle Width="18" Height="18" Fill="White" RadiusX="2" RadiusY="2"/>
+                        <Rectangle Width="6" Height="2" Fill="#1976D2" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                        <Rectangle Width="6" Height="2" Fill="#1976D2" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <Rectangle Width="2" Height="6" Fill="#1976D2" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,10,0,0"/>
+                        <Rectangle Width="2" Height="6" Fill="#1976D2" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,10"/>
                     </Grid>
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock FontSize="28" FontWeight="Bold" Foreground="White" Text="대시보드">
+                        <TextBlock.Effect>
+                            <DropShadowEffect Color="#1976D2" BlurRadius="10" ShadowDepth="2" Opacity="0.5"/>
+                        </TextBlock.Effect>
+                    </TextBlock>
+                    <TextBlock FontSize="14" Foreground="#E3F2FD" Text="SEMES 아산 사업장" Margin="0,5,0,0"/>
                 </StackPanel>
-
-                <!-- 불량 검출 차트 -->
-                <StackPanel Grid.Column="1" HorizontalAlignment="Center">
-                    <TextBlock Text="불량률 (선택 날짜 기준)" 
-                               Style="{StaticResource MaterialDesignHeadline6TextBlock}"
-                               HorizontalAlignment="Center" 
-                               Margin="0,0,0,20"/>
-                    <Grid Width="200" Height="200">
-                        <Ellipse Stroke="{DynamicResource MaterialDesignDivider}" StrokeThickness="20" Fill="Transparent"/>
-                        <Path x:Name="DefectDetectionPath" Stroke="#F44336" StrokeThickness="20" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
-                        <TextBlock x:Name="DefectDetectionText" Text="0%" Style="{StaticResource MaterialDesignHeadline4TextBlock}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Grid>
-                </StackPanel>
-            </Grid>
-
-            <!-- 검사 내역 테이블 -->
-            <DataGrid x:Name="InspectionTable" Grid.Row="3" AutoGenerateColumns="False" HeadersVisibility="Column"
-           IsReadOnly="True" CanUserResizeRows="False" SelectionMode="Single">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="PCB ID" Binding="{Binding PcbId}" Width="*" />
-                    <DataGridTextColumn Header="검사 일시" Binding="{Binding InspectionDate}" Width="2*" />
-                    <DataGridTextColumn Header="시리얼 번호" Binding="{Binding SerialNumber}" Width="2*" />
-                    <DataGridTextColumn Header="불량 수" Binding="{Binding DefectCount}" Width="*" />
-                    <DataGridTextColumn Header="양품 여부" Binding="{Binding IsGood}" Width="*" />
-                </DataGrid.Columns>
-            </DataGrid>
-            
-            <!-- 통계 정보 -->
-            <StackPanel Grid.Row="2" Margin="20">
-                <Grid Margin="0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <materialDesign:PackIcon Kind="ChartLineVariant" Foreground="#E53935" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                    <TextBlock x:Name="지난7일평균불량률Text" Grid.Column="1" Text="지난 7일 평균 불량률: -" VerticalAlignment="Center"/>
-                </Grid>
-
-                <Grid Margin="0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <materialDesign:PackIcon Kind="TrendingUp" Foreground="#2196F3" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                    <TextBlock x:Name="전일대비Text" Grid.Column="1" Text="전일 대비: -" VerticalAlignment="Center"/>
-                </Grid>
             </StackPanel>
+        </Border>
 
-           
+        <!-- 본문 영역 -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="300"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 왼쪽 영역 -->
+            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                <StackPanel Grid.Column="0" Margin="10">
+                <materialDesign:Card Style="{StaticResource TechCardStyle}">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <StackPanel Margin="20">
+                            <TextBlock Text="전체 불량률 (누적 기준)" FontSize="20" FontWeight="Bold" Margin="0,0,0,20"/>
+                            <Grid Width="200" Height="200">
+                                <Ellipse Stroke="{DynamicResource MaterialDesignDivider}" StrokeThickness="20" Fill="Transparent"/>
+                                <Path x:Name="DefectRatePath" Stroke="#29B6F6" StrokeThickness="20" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                <TextBlock x:Name="DefectRateText" Text="0%" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
+                        </StackPanel>
+                        <StackPanel Margin="20">
+                            <TextBlock Text="불량률 (선택 날짜 기준)" FontSize="20" FontWeight="Bold" Margin="0,0,0,20"/>
+                            <Grid Width="200" Height="200">
+                                <Ellipse Stroke="{DynamicResource MaterialDesignDivider}" StrokeThickness="20" Fill="Transparent"/>
+                                <Path x:Name="DefectDetectionPath" Stroke="#F44336" StrokeThickness="20" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                <TextBlock x:Name="DefectDetectionText" Text="0%" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
+                        </StackPanel>
+                    </StackPanel>
+                </materialDesign:Card>
+
+                <materialDesign:Card Style="{StaticResource TechCardStyle}">
+                    <StackPanel>
+                        <TextBlock Text="불량 통계" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+                        <Grid Margin="0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <materialDesign:PackIcon Kind="ChartLineVariant" Foreground="#E53935" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock x:Name="지난7일평균불량률Text" Grid.Column="1" Text="지난 7일 평균 불량률: -" VerticalAlignment="Center"/>
+                        </Grid>
+                        <Grid Margin="0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <materialDesign:PackIcon Kind="TrendingUp" Foreground="#2196F3" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock x:Name="전일대비Text" Grid.Column="1" Text="전일 대비: -" VerticalAlignment="Center"/>
+                        </Grid>
+                    </StackPanel>
+                </materialDesign:Card>
+
+                <materialDesign:Card Style="{StaticResource TechCardStyle}" Height="200">
+                    <DataGrid x:Name="InspectionTable" AutoGenerateColumns="False" HeadersVisibility="Column"
+                              IsReadOnly="True" CanUserResizeRows="False" SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="PCB ID" Binding="{Binding PcbId}" Width="*" />
+                            <DataGridTextColumn Header="검사 일시" Binding="{Binding InspectionDate}" Width="2*" />
+                            <DataGridTextColumn Header="시리얼 번호" Binding="{Binding SerialNumber}" Width="2*" />
+                            <DataGridTextColumn Header="불량 수" Binding="{Binding DefectCount}" Width="*" />
+                            <DataGridTextColumn Header="양품 여부" Binding="{Binding IsGood}" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </materialDesign:Card>
+            </StackPanel>
+            </ScrollViewer>
+            <!-- 오른쪽 정보 카드 -->
+            <materialDesign:Card Grid.Column="1" Margin="0,10,10,10" Style="{StaticResource TechCardStyle}">
+                <StackPanel>
+                    <TextBlock Text="검사이력" FontSize="20" FontWeight="Bold" Margin="0,0,0,16"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="검사 수:" Grid.Row="0" Grid.Column="0" Margin="0,0,10,8"/>
+                        <TextBlock x:Name="검사수Text" Grid.Row="0" Grid.Column="1" FontWeight="SemiBold"/>
+
+                        <TextBlock Text="양품 수:" Grid.Row="1" Grid.Column="0" Margin="0,0,10,8"/>
+                        <TextBlock x:Name="양품수Text" Grid.Row="1" Grid.Column="1" FontWeight="SemiBold"/>
+
+                        <TextBlock Text="불량 수:" Grid.Row="2" Grid.Column="0" Margin="0,0,10,8"/>
+                        <TextBlock x:Name="불량수Text" Grid.Row="2" Grid.Column="1" FontWeight="SemiBold"/>
+                    </Grid>
+                    <TextBlock Text="날짜 선택" FontSize="14" FontWeight="Bold" Margin="0,16,0,8"/>
+                    <Calendar x:Name="DefectCalendar" Margin="0,10,0,0" Language="ko" SelectedDatesChanged="DefectCalendar_SelectedDatesChanged"/>
+                </StackPanel>
+            </materialDesign:Card>
         </Grid>
-
-        <!-- 오른쪽 정보 패널 -->
-        <materialDesign:Card Grid.Column="1" Margin="0,10,10,10">
-            <StackPanel Margin="16">
-                <TextBlock Style="{StaticResource MaterialDesignHeadline6TextBlock}" Text="검사이력" Margin="0,0,0,16"/>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="검사 수:" Margin="0,0,10,8"/>
-                    <TextBlock x:Name="검사수Text" Grid.Row="0" Grid.Column="1" Text="0 건" Margin="0,0,0,8" FontWeight="SemiBold"/>
-
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="양품 수:" Margin="0,0,10,8"/>
-                    <TextBlock x:Name="양품수Text" Grid.Row="1" Grid.Column="1" Text="0 건" Margin="0,0,0,8" FontWeight="SemiBold"/>
-
-                    <TextBlock Grid.Row="2" Grid.Column="0" Text="불량 수:" Margin="0,0,10,8"/>
-                    <TextBlock x:Name="불량수Text" Grid.Row="2" Grid.Column="1" Text="0 건" Margin="0,0,0,8" FontWeight="SemiBold"/>
-                </Grid>
-                <Calendar x:Name="DefectCalendar" Margin="0,20,0,0" Language="ko" SelectedDatesChanged="DefectCalendar_SelectedDatesChanged"/>
-            </StackPanel>
-        </materialDesign:Card>
     </Grid>
 </Page>
