@@ -282,6 +282,12 @@ namespace semes
                         {
                             defectItems.Add(item);
                         }
+
+                        // 시리얼 번호 업데이트
+                        if (!string.IsNullOrEmpty(currentSerialNumber))
+                        {
+                            SerialNumberValue.Text = currentSerialNumber;
+                        }
                     });
                 });
 
@@ -466,6 +472,12 @@ namespace semes
             DefectPositionValue.Text = "";
             DefectHeightValue.Text = "";
             DefectSizeValue.Text = "";
+
+            // 시리얼 번호 초기화
+            SerialNumberValue.Text = "-";
+
+            // 현재 PCB 시리얼 넘버 초기화
+            currentSerialNumber = "";
         }
         #endregion
 

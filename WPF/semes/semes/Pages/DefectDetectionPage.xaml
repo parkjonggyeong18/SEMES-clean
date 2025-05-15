@@ -104,7 +104,7 @@
                     </Grid>
 
 
-                </Grid> 
+                </Grid>
             </ScrollViewer>
         </Border>
 
@@ -125,12 +125,13 @@
                         Margin="0,0,0,16" 
                         Text="PCB 정보"/>
 
-                    <Grid>
+                    <Grid Height="98">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
@@ -145,6 +146,9 @@
 
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="데이터 크기:" Margin="0,0,10,8"/>
                         <TextBlock Grid.Row="3" Grid.Column="1" Text="약 190MB" Margin="0,0,0,8"/>
+
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="시리얼 번호:" Margin="0,1,10,-17"/>
+                        <TextBlock x:Name="SerialNumberValue" Grid.Row="4" Grid.Column="1" Text="-" Margin="0,1,0,-17"/>
                     </Grid>
                 </StackPanel>
             </materialDesign:Card>
