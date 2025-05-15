@@ -206,8 +206,48 @@
             </Setter>
         </Style>
 
-        <!-- 모던 텍스트박스 (개선됨) -->
-        <Style x:Key="TechTextBox" TargetType="TextBox">
+        <!-- 제목용 텍스트박스 (단일 라인) -->
+        <Style x:Key="TechTitleTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E1E5E9"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="20,15"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border 
+                            Background="{TemplateBinding Background}" 
+                            BorderBrush="{TemplateBinding BorderBrush}" 
+                            BorderThickness="{TemplateBinding BorderThickness}" 
+                            CornerRadius="12">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#1976D2" BlurRadius="10" ShadowDepth="0" Opacity="0.1"/>
+                            </Border.Effect>
+                            <ScrollViewer x:Name="PART_ContentHost" 
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalScrollBarVisibility="Hidden"
+                                          HorizontalScrollBarVisibility="Hidden"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter Property="BorderBrush" Value="#2196F3"/>
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#2196F3" BlurRadius="15" ShadowDepth="0" Opacity="0.3"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Foreground" Value="#333333"/>
+        </Style>
+
+        <!-- 내용용 텍스트박스 (멀티 라인) -->
+        <Style x:Key="TechContentTextBox" TargetType="TextBox">
             <Setter Property="Background" Value="White"/>
             <Setter Property="BorderBrush" Value="#E1E5E9"/>
             <Setter Property="BorderThickness" Value="1"/>
@@ -416,9 +456,8 @@
                         </StackPanel>
 
                         <TextBox x:Name="txtTitle"
-                                 Style="{StaticResource TechTextBox}"
+                                 Style="{StaticResource TechTitleTextBox}"
                                  Height="60"
-                                 AcceptsReturn="True"
                                  TextWrapping="Wrap"/>
                     </StackPanel>
 
@@ -452,7 +491,7 @@
                         </StackPanel>
 
                         <TextBox x:Name="txtContent"
-                                 Style="{StaticResource TechTextBox}"
+                                 Style="{StaticResource TechContentTextBox}"
                                  Height="300"
                                  TextWrapping="Wrap"
                                  AcceptsReturn="True"
