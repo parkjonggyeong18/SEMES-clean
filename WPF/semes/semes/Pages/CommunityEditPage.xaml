@@ -4,17 +4,18 @@
       Title="CommunityEditPage">
 
     <Page.Resources>
-        <!-- 하이테크 블루 그라데이션 배경 -->
+        <!-- CommunityPage와 동일한 디자인 시스템 적용 -->
+
+        <!-- 하이테크 블루 그라데이션 -->
         <LinearGradientBrush x:Key="MainBackground" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#1976D2" Offset="0"/>
-            <GradientStop Color="#2196F3" Offset="0.5"/>
-            <GradientStop Color="#0288D1" Offset="1"/>
+            <GradientStop Color="#E3F2FD" Offset="0"/>
+            <GradientStop Color="#F5F5F5" Offset="1"/>
         </LinearGradientBrush>
 
-        <!-- 카드 그라데이션 -->
-        <LinearGradientBrush x:Key="CardGradient" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#FFFFFF" Offset="0"/>
-            <GradientStop Color="#F7F9FC" Offset="1"/>
+        <!-- 헤더 그라데이션 -->
+        <LinearGradientBrush x:Key="HeaderGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#1976D2" Offset="0"/>
+            <GradientStop Color="#2196F3" Offset="1"/>
         </LinearGradientBrush>
 
         <!-- 글래스모피즘 효과 -->
@@ -23,40 +24,66 @@
             <GradientStop Color="#10FFFFFF" Offset="1"/>
         </LinearGradientBrush>
 
-        <!-- 모던 텍스트박스 -->
-        <Style x:Key="TechTextBox" TargetType="TextBox">
+        <!-- 카드 스타일 (CommunityPage와 동일) -->
+        <Style x:Key="TechCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E1E5E9"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Margin" Value="8"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="#1976D2" BlurRadius="10" ShadowDepth="0" Opacity="0.1"/>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect Color="#1976D2" BlurRadius="20" ShadowDepth="0" Opacity="0.3"/>
+                        </Setter.Value>
+                    </Setter>
+                    <Setter Property="Background">
+                        <Setter.Value>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="#FFFFFF" Offset="0"/>
+                                <GradientStop Color="#F7F9FC" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 하이테크 스크롤바 스타일 -->
+        <LinearGradientBrush x:Key="TechBlueGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#1976D2" Offset="0"/>
+            <GradientStop Color="#2196F3" Offset="1"/>
+        </LinearGradientBrush>
+
+        <!-- 스크롤바 Thumb 스타일 -->
+        <Style x:Key="TechScrollBarThumb" TargetType="{x:Type Thumb}">
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="IsTabStop" Value="false"/>
+            <Setter Property="Focusable" Value="false"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Grid>
-                            <!-- 배경 효과 -->
-                            <Border Background="#FFFFFF" 
-                                    CornerRadius="15" 
-                                    Opacity="0.95"/>
-
-                            <!-- 테두리 그라데이션 -->
-                            <Border CornerRadius="15" 
-                                    BorderThickness="2">
-                                <Border.BorderBrush>
-                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                        <GradientStop Color="#1976D2" Offset="0"/>
-                                        <GradientStop Color="#2196F3" Offset="0.5"/>
-                                        <GradientStop Color="#0288D1" Offset="1"/>
-                                    </LinearGradientBrush>
-                                </Border.BorderBrush>
-                            </Border>
-
-                            <!-- 내용 -->
-                            <ScrollViewer x:Name="PART_ContentHost" 
-                                          Margin="20,15"
-                                          VerticalScrollBarVisibility="Auto"
-                                          HorizontalScrollBarVisibility="Disabled"/>
-                        </Grid>
+                    <ControlTemplate TargetType="{x:Type Thumb}">
+                        <Border 
+                            CornerRadius="6" 
+                            Background="{StaticResource TechBlueGradient}"
+                            BorderBrush="Transparent" 
+                            BorderThickness="1">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#1976D2" BlurRadius="8" ShadowDepth="0" Opacity="0.3"/>
+                            </Border.Effect>
+                        </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsFocused" Value="True">
+                            <Trigger Property="IsMouseOver" Value="true">
                                 <Setter Property="Effect">
                                     <Setter.Value>
-                                        <DropShadowEffect Color="#2196F3" BlurRadius="10" ShadowDepth="0" Opacity="0.3"/>
+                                        <DropShadowEffect Color="#1976D2" BlurRadius="12" ShadowDepth="0" Opacity="0.5"/>
                                     </Setter.Value>
                                 </Setter>
                             </Trigger>
@@ -64,43 +91,186 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <Setter Property="Foreground" Value="#333"/>
-            <Setter Property="FontSize" Value="16"/>
-            <Setter Property="FontFamily" Value="Segoe UI, Arial"/>
-            <Setter Property="Effect">
+        </Style>
+
+        <!-- 스크롤바 버튼 스타일 -->
+        <Style x:Key="TechScrollBarButton" TargetType="{x:Type RepeatButton}">
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="Focusable" Value="false"/>
+            <Setter Property="Template">
                 <Setter.Value>
-                    <DropShadowEffect Color="#1976D2" BlurRadius="15" ShadowDepth="5" Opacity="0.3"/>
+                    <ControlTemplate TargetType="{x:Type RepeatButton}">
+                        <Border Background="Transparent" Height="0" Width="0"/>
+                    </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <!-- Primary 버튼 스타일 -->
-        <Style x:Key="PrimaryButton" TargetType="Button">
+        <!-- 페이지 버튼 스타일 -->
+        <Style x:Key="TechScrollBarPageButton" TargetType="{x:Type RepeatButton}">
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="IsTabStop" Value="false"/>
+            <Setter Property="Focusable" Value="false"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type RepeatButton}">
+                        <Border Background="Transparent"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 메인 스크롤바 스타일 -->
+        <Style x:Key="TechScrollBar" TargetType="{x:Type ScrollBar}">
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Style.Triggers>
+                <Trigger Property="Orientation" Value="Vertical">
+                    <Setter Property="Width" Value="16"/>
+                    <Setter Property="Height" Value="Auto"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type ScrollBar}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition MaxHeight="16"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition MaxHeight="16"/>
+                                    </Grid.RowDefinitions>
+                                    <Border Grid.RowSpan="3" 
+                                            CornerRadius="8" 
+                                            Background="#F0F2F5"
+                                            Margin="4"/>
+
+                                    <RepeatButton 
+                                        Grid.Row="0" 
+                                        Style="{StaticResource TechScrollBarButton}" 
+                                        Command="ScrollBar.LineUpCommand"/>
+
+                                    <Track Name="PART_Track" Grid.Row="1" IsDirectionReversed="true">
+                                        <Track.DecreaseRepeatButton>
+                                            <RepeatButton Style="{StaticResource TechScrollBarPageButton}" Command="ScrollBar.PageUpCommand"/>
+                                        </Track.DecreaseRepeatButton>
+                                        <Track.Thumb>
+                                            <Thumb Style="{StaticResource TechScrollBarThumb}" Margin="4,0,4,0"/>
+                                        </Track.Thumb>
+                                        <Track.IncreaseRepeatButton>
+                                            <RepeatButton Style="{StaticResource TechScrollBarPageButton}" Command="ScrollBar.PageDownCommand"/>
+                                        </Track.IncreaseRepeatButton>
+                                    </Track>
+
+                                    <RepeatButton 
+                                        Grid.Row="2" 
+                                        Style="{StaticResource TechScrollBarButton}" 
+                                        Command="ScrollBar.LineDownCommand"/>
+                                </Grid>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 스크롤뷰어 스타일 -->
+        <Style x:Key="TechScrollViewer" TargetType="{x:Type ScrollViewer}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollViewer}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <ScrollContentPresenter Grid.Column="0" Grid.Row="0" Margin="{TemplateBinding Padding}"/>
+
+                            <ScrollBar 
+                                Name="PART_VerticalScrollBar"
+                                Grid.Row="0" 
+                                Grid.Column="1"
+                                Value="{TemplateBinding VerticalOffset}"
+                                Maximum="{TemplateBinding ScrollableHeight}"
+                                ViewportSize="{TemplateBinding ViewportHeight}"
+                                Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
+                                Style="{StaticResource TechScrollBar}"
+                                Margin="0,0,4,0"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 모던 텍스트박스 (개선됨) -->
+        <Style x:Key="TechTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E1E5E9"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="20,15"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border 
+                            Background="{TemplateBinding Background}" 
+                            BorderBrush="{TemplateBinding BorderBrush}" 
+                            BorderThickness="{TemplateBinding BorderThickness}" 
+                            CornerRadius="12">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#1976D2" BlurRadius="10" ShadowDepth="0" Opacity="0.1"/>
+                            </Border.Effect>
+                            <ScrollViewer x:Name="PART_ContentHost" 
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled"
+                                          Style="{StaticResource TechScrollViewer}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter Property="BorderBrush" Value="#2196F3"/>
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#2196F3" BlurRadius="15" ShadowDepth="0" Opacity="0.3"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Foreground" Value="#333333"/>
+        </Style>
+
+        <!-- 하이테크 버튼 스타일 (CommunityPage와 동일) -->
+        <Style x:Key="TechButton" TargetType="Button">
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="MainBorder" 
+                        <Border x:Name="Border" 
                                 CornerRadius="25"
-                                Padding="25,12"
-                                MinWidth="150"
-                                Height="46">
+                                Padding="20,10">
                             <Border.Background>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                                     <GradientStop Color="#1976D2" Offset="0"/>
-                                    <GradientStop Color="#2196F3" Offset="0.5"/>
-                                    <GradientStop Color="#0288D1" Offset="1"/>
+                                    <GradientStop Color="#2196F3" Offset="1"/>
                                 </LinearGradientBrush>
                             </Border.Background>
                             <Border.Effect>
-                                <DropShadowEffect Color="#1976D2" BlurRadius="20" ShadowDepth="0" Opacity="0.6"/>
+                                <DropShadowEffect Color="#1976D2" BlurRadius="15" ShadowDepth="0" Opacity="0.4"/>
                             </Border.Effect>
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="MainBorder" Property="Effect">
+                                <Setter TargetName="Border" Property="Effect">
                                     <Setter.Value>
-                                        <DropShadowEffect Color="#1976D2" BlurRadius="25" ShadowDepth="0" Opacity="0.8"/>
+                                        <DropShadowEffect Color="#1976D2" BlurRadius="25" ShadowDepth="0" Opacity="0.6"/>
                                     </Setter.Value>
                                 </Setter>
                             </Trigger>
@@ -109,12 +279,12 @@
                 </Setter.Value>
             </Setter>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize" Value="15"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
 
-        <!-- Secondary 버튼 스타일 -->
+        <!-- Secondary 버튼 스타일 (개선됨) -->
         <Style x:Key="SecondaryButton" TargetType="Button">
             <Setter Property="Template">
                 <Setter.Value>
@@ -123,26 +293,26 @@
                                 CornerRadius="25"
                                 BorderThickness="2"
                                 Background="White"
-                                Padding="25,12"
-                                MinWidth="150"
-                                Height="46">
-                            <Border.BorderBrush>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                    <GradientStop Color="#1976D2" Offset="0"/>
-                                    <GradientStop Color="#2196F3" Offset="0.5"/>
-                                    <GradientStop Color="#0288D1" Offset="1"/>
-                                </LinearGradientBrush>
-                            </Border.BorderBrush>
+                                Padding="20,10"
+                                BorderBrush="#E1E5E9">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#1976D2" BlurRadius="10" ShadowDepth="0" Opacity="0.1"/>
+                            </Border.Effect>
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="BorderBrush" Value="#2196F3"/>
+                                <Setter TargetName="Border" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#2196F3" BlurRadius="15" ShadowDepth="0" Opacity="0.3"/>
+                                    </Setter.Value>
+                                </Setter>
                                 <Setter TargetName="Border" Property="Background">
                                     <Setter.Value>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1" Opacity="0.1">
-                                            <GradientStop Color="#1976D2" Offset="0"/>
-                                            <GradientStop Color="#2196F3" Offset="0.5"/>
-                                            <GradientStop Color="#0288D1" Offset="1"/>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#FFFFFF" Offset="0"/>
+                                            <GradientStop Color="#F7F9FC" Offset="1"/>
                                         </LinearGradientBrush>
                                     </Setter.Value>
                                 </Setter>
@@ -152,8 +322,8 @@
                 </Setter.Value>
             </Setter>
             <Setter Property="Foreground" Value="#1976D2"/>
-            <Setter Property="FontSize" Value="15"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
     </Page.Resources>
@@ -164,54 +334,41 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- 상단 헤더 -->
-        <Border Grid.Row="0" 
-                Background="{StaticResource GlassEffect}" 
-                Padding="40,30" 
-                BorderThickness="0,0,0,1">
-            <Border.BorderBrush>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                    <GradientStop Color="#30FFFFFF" Offset="0"/>
-                    <GradientStop Color="#10FFFFFF" Offset="1"/>
-                </LinearGradientBrush>
-            </Border.BorderBrush>
+        <!-- 헤더 영역 (CommunityPage와 동일한 스타일) -->
+        <Border Grid.Row="0" Background="{StaticResource HeaderGradient}" Padding="30,25">
+            <Border.Effect>
+                <DropShadowEffect Color="#1976D2" BlurRadius="15" ShadowDepth="3" Opacity="0.3"/>
+            </Border.Effect>
 
-            <StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                    <!-- 반도체 칩 아이콘 -->
-                    <Border Background="#FFFFFF" 
-                            CornerRadius="50" 
-                            Width="50" 
-                            Height="50" 
-                            Margin="0,0,20,0">
-                        <Border.Effect>
-                            <DropShadowEffect Color="#1976D2" BlurRadius="15" ShadowDepth="3" Opacity="0.5"/>
-                        </Border.Effect>
-                        <Grid>
-                            <!-- CPU 칩 모양 -->
-                            <Rectangle Width="30" Height="30" Fill="#1976D2" RadiusX="3" RadiusY="3"/>
-                            <Rectangle Width="18" Height="18" Fill="White" RadiusX="2" RadiusY="2"/>
-                            <Rectangle Width="6" Height="2" Fill="#1976D2" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                            <Rectangle Width="6" Height="2" Fill="#1976D2" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <Rectangle Width="2" Height="6" Fill="#1976D2" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,10,0,0"/>
-                            <Rectangle Width="2" Height="6" Fill="#1976D2" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,10"/>
-                        </Grid>
-                    </Border>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- CPU 칩 아이콘 (CommunityPage와 동일) -->
+                <Border Background="#FFFFFF" 
+                        CornerRadius="50" 
+                        Width="45" 
+                        Height="45" 
+                        Margin="0,0,20,0">
+                    <Grid>
+                        <Rectangle Width="25" Height="25" Fill="#1976D2" RadiusX="3" RadiusY="3"/>
+                        <Rectangle Width="15" Height="15" Fill="White" RadiusX="2" RadiusY="2"/>
+                        <Rectangle Width="5" Height="1" Fill="#1976D2" Margin="-15,0,0,0"/>
+                        <Rectangle Width="5" Height="1" Fill="#1976D2" Margin="15,0,0,0"/>
+                        <Rectangle Width="1" Height="5" Fill="#1976D2" Margin="0,-15,0,0"/>
+                        <Rectangle Width="1" Height="5" Fill="#1976D2" Margin="0,15,0,0"/>
+                    </Grid>
+                </Border>
 
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="게시글 수정" 
-                                   FontSize="32" 
-                                   FontWeight="Bold" 
-                                   Foreground="White">
-                            <TextBlock.Effect>
-                                <DropShadowEffect Color="#1976D2" BlurRadius="10" ShadowDepth="2" Opacity="0.5"/>
-                            </TextBlock.Effect>
-                        </TextBlock>
-                        <TextBlock Text="SEMES 아산 사업장" 
-                                   FontSize="16" 
-                                   Foreground="#E3F2FD" 
-                                   Margin="0,5,0,0"/>
-                    </StackPanel>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock 
+                               FontSize="28" 
+                               FontWeight="Bold" 
+                               Foreground="White" Text="게시글 수정">
+                        <TextBlock.Effect>
+                            <DropShadowEffect Color="#1976D2" BlurRadius="10" ShadowDepth="2" Opacity="0.5"/>
+                        </TextBlock.Effect></TextBlock>
+                    <TextBlock 
+                               FontSize="14" 
+                               Foreground="#E3F2FD" 
+                               Margin="0,5,0,0"><Run Language="ko-kr" Text="SEMES 아산 사업장 "/></TextBlock>
                 </StackPanel>
             </StackPanel>
         </Border>
@@ -219,28 +376,27 @@
         <!-- 메인 편집 영역 -->
         <ScrollViewer Grid.Row="1" 
                       VerticalScrollBarVisibility="Auto" 
-                      Padding="40"
-                      Background="Transparent">
+                      HorizontalScrollBarVisibility="Disabled"
+                      Padding="15"
+                      Background="Transparent"
+                      Style="{StaticResource TechScrollViewer}">
 
-            <!-- 편집 카드 -->
-            <Border Background="{StaticResource CardGradient}" 
-                    CornerRadius="20" 
-                    Padding="50">
-                <Border.Effect>
-                    <DropShadowEffect Color="#1976D2" BlurRadius="30" ShadowDepth="10" Opacity="0.3"/>
-                </Border.Effect>
+            <!-- 편집 카드 (TechCardStyle 적용) -->
+            <Border Style="{StaticResource TechCardStyle}" 
+                    Padding="40">
 
                 <StackPanel>
                     <!-- 제목 섹션 -->
-                    <StackPanel Margin="0,0,0,40">
+                    <StackPanel Margin="0,0,0,30">
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                            <Border Background="{StaticResource MainBackground}" 
+                            <Border Background="{StaticResource HeaderGradient}" 
                                     CornerRadius="25" 
                                     Padding="12,8" 
                                     Margin="0,0,15,0">
                                 <Border.Effect>
-                                    <DropShadowEffect Color="#1976D2" BlurRadius="10" ShadowDepth="0" Opacity="0.3"/>
+                                    <DropShadowEffect Color="#1976D2" BlurRadius="8" ShadowDepth="0" Opacity="0.3"/>
                                 </Border.Effect>
+                                <!-- 제목 아이콘 -->
                                 <Path Fill="White" 
                                       Data="M5 4v3h5.5v12h3V7H19V4z"
                                       Stretch="Uniform"
@@ -248,12 +404,12 @@
                                       Height="16"/>
                             </Border>
                             <TextBlock Text="제목" 
-                                       FontSize="22" 
+                                       FontSize="20" 
                                        FontWeight="Bold" 
-                                       Foreground="#333"
+                                       Foreground="#333333"
                                        VerticalAlignment="Center"/>
                             <TextBlock Text="*" 
-                                       FontSize="20" 
+                                       FontSize="18" 
                                        Foreground="#D32F2F" 
                                        Margin="5,0,0,0"
                                        VerticalAlignment="Center"/>
@@ -267,14 +423,14 @@
                     </StackPanel>
 
                     <!-- 내용 섹션 -->
-                    <StackPanel Margin="0,0,0,50">
+                    <StackPanel Margin="0,0,0,40">
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                            <Border Background="{StaticResource MainBackground}" 
+                            <Border Background="{StaticResource HeaderGradient}" 
                                     CornerRadius="25" 
                                     Padding="12,8" 
                                     Margin="0,0,15,0">
                                 <Border.Effect>
-                                    <DropShadowEffect Color="#1976D2" BlurRadius="10" ShadowDepth="0" Opacity="0.3"/>
+                                    <DropShadowEffect Color="#1976D2" BlurRadius="8" ShadowDepth="0" Opacity="0.3"/>
                                 </Border.Effect>
                                 <!-- 내용 아이콘 -->
                                 <Path Fill="White" 
@@ -284,12 +440,12 @@
                                       Height="16"/>
                             </Border>
                             <TextBlock Text="내용" 
-                                       FontSize="22" 
+                                       FontSize="20" 
                                        FontWeight="Bold" 
-                                       Foreground="#333"
+                                       Foreground="#333333"
                                        VerticalAlignment="Center"/>
                             <TextBlock Text="*" 
-                                       FontSize="20" 
+                                       FontSize="18" 
                                        Foreground="#D32F2F" 
                                        Margin="5,0,0,0"
                                        VerticalAlignment="Center"/>
@@ -297,7 +453,7 @@
 
                         <TextBox x:Name="txtContent"
                                  Style="{StaticResource TechTextBox}"
-                                 Height="250"
+                                 Height="300"
                                  TextWrapping="Wrap"
                                  AcceptsReturn="True"
                                  VerticalContentAlignment="Top"/>
@@ -306,32 +462,32 @@
                     <!-- 버튼 영역 -->
                     <StackPanel Orientation="Horizontal" 
                                 HorizontalAlignment="Center"
-                                Margin="0,30,0,0">
+                                Margin="0,20,0,0">
                         <Button Style="{StaticResource SecondaryButton}"
                                 Click="Cancel_Click"
-                                Margin="0,0,30,0">
+                                Margin="0,0,20,0">
                             <StackPanel Orientation="Horizontal">
                                 <!-- Cancel 아이콘 -->
                                 <Path Fill="#1976D2" 
                                       Data="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
                                       Stretch="Uniform"
-                                      Width="18"
-                                      Height="18"
-                                      Margin="0,0,10,0"/>
+                                      Width="16"
+                                      Height="16"
+                                      Margin="0,0,8,0"/>
                                 <TextBlock Text="취소"/>
                             </StackPanel>
                         </Button>
 
-                        <Button Style="{StaticResource PrimaryButton}"
+                        <Button Style="{StaticResource TechButton}"
                                 Click="Save_Click">
                             <StackPanel Orientation="Horizontal">
                                 <!-- Save 아이콘 -->
                                 <Path Fill="White" 
                                       Data="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"
                                       Stretch="Uniform"
-                                      Width="18"
-                                      Height="18"
-                                      Margin="0,0,10,0"/>
+                                      Width="16"
+                                      Height="16"
+                                      Margin="0,0,8,0"/>
                                 <TextBlock Text="저장"/>
                             </StackPanel>
                         </Button>

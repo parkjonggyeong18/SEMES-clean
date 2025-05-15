@@ -29,7 +29,7 @@ namespace semes.Pages
 
             using var conn = new MySqlConnection(_connectionString);
             await conn.OpenAsync();
-            
+
             var cmd = new MySqlCommand("INSERT INTO posts (title, content, author) VALUES (@title, @content, @author)", conn);
             cmd.Parameters.AddWithValue("@title", title);
             cmd.Parameters.AddWithValue("@content", content);
