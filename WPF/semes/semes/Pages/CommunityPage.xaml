@@ -246,35 +246,14 @@
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <!-- 상단: 제목과 상태 배지 -->
+                                <!-- 상단: 제목 -->
                                 <Grid Grid.Row="0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <TextBlock Grid.Column="0" 
-                                               Text="{Binding Title}" 
+                                    <TextBlock Text="{Binding Title}" 
                                                FontSize="19" 
                                                FontWeight="SemiBold"
                                                Foreground="#333333"
                                                TextTrimming="CharacterEllipsis"
                                                TextWrapping="NoWrap"/>
-
-                                    <!-- NEW 배지 -->
-                                    <Border Grid.Column="1" 
-                                            Background="{StaticResource HeaderGradient}" 
-                                            CornerRadius="15" 
-                                            Padding="10,5"
-                                            Margin="15,0,0,0">
-                                        <Border.Effect>
-                                            <DropShadowEffect Color="#1976D2" BlurRadius="5" ShadowDepth="0" Opacity="0.3"/>
-                                        </Border.Effect>
-                                        <TextBlock Text="NEW" 
-                                                   FontSize="11" 
-                                                   FontWeight="Bold" 
-                                                   Foreground="White"/>
-                                    </Border>
                                 </Grid>
 
                                 <!-- 내용 미리보기 -->
@@ -329,47 +308,7 @@
                                         </StackPanel>
                                     </StackPanel>
 
-                                    <!-- 통계 정보 -->
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <!-- 좋아요 -->
-                                        <Border Background="#E3F2FD" 
-                                                CornerRadius="18" 
-                                                Padding="10,6" 
-                                                Margin="5,0">
-                                            <StackPanel Orientation="Horizontal">
-                                                <!-- 하트 아이콘 -->
-                                                <Path Data="M13,10 L17,6 L21,10 L17,21 Z M13,10 L9,6 L5,10 L9,21 Z" 
-                                                      Fill="#1976D2" 
-                                                      Width="14" Height="14"/>
-                                                <TextBlock Text="0" FontSize="12" Margin="5,0,0,0" Foreground="#1976D2" FontWeight="SemiBold"/>
-                                            </StackPanel>
-                                        </Border>
 
-                                        <!-- 댓글 -->
-                                        <Border Background="#E8F5E9" 
-                                                CornerRadius="18" 
-                                                Padding="10,6" 
-                                                Margin="5,0">
-                                            <StackPanel Orientation="Horizontal">
-                                                <!-- 댓글 아이콘 -->
-                                                <Rectangle Width="12" Height="10" Stroke="#4CAF50" StrokeThickness="2" RadiusX="3" RadiusY="3"/>
-                                                <TextBlock Text="0" FontSize="12" Margin="5,0,0,0" Foreground="#4CAF50" FontWeight="SemiBold"/>
-                                            </StackPanel>
-                                        </Border>
-
-                                        <!-- 조회수 -->
-                                        <Border Background="#FFF3E0" 
-                                                CornerRadius="18" 
-                                                Padding="10,6" 
-                                                Margin="5,0">
-                                            <StackPanel Orientation="Horizontal">
-                                                <!-- 눈 아이콘 -->
-                                                <Ellipse Width="14" Height="10" Stroke="#FF9800" StrokeThickness="2"/>
-                                                <Ellipse Width="4" Height="4" Fill="#FF9800" Margin="-9,0,0,0"/>
-                                                <TextBlock Text="0" FontSize="12" Margin="8,0,0,0" Foreground="#FF9800" FontWeight="SemiBold"/>
-                                            </StackPanel>
-                                        </Border>
-                                    </StackPanel>
                                 </Grid>
                             </Grid>
                         </Border>
