@@ -23,11 +23,6 @@
         <!-- 상단 도구 모음 -->
         <materialDesign:Card Grid.Row="0" Grid.Column="0" Margin="10,10,10,10" Padding="10">
             <StackPanel Orientation="Horizontal">
-                <Button
-                    Style="{StaticResource MaterialDesignOutlinedButton}"
-                    Margin="5"
-                    Content="이미지 업로드"/>
-
                 <Button 
                     x:Name="DefectBtn"
                     Style="{StaticResource MaterialDesignOutlinedButton}"
@@ -78,7 +73,38 @@
                     <Canvas x:Name="DefectCanvas" Background="Transparent" 
                     Width="{Binding ActualWidth, ElementName=PCBImage}" 
                     Height="{Binding ActualHeight, ElementName=PCBImage}"/>
-                </Grid>
+
+                    <!-- 진행 상태 표시를 위한 오버레이 패널 -->
+                    <Grid x:Name="ProgressOverlay" Visibility="Collapsed" Panel.ZIndex="1000"
+                    Background="#80000000" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                        <Border VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Background="White" Padding="100" 
+                        BorderBrush="{DynamicResource PrimaryHueMidBrush}" BorderThickness="8"
+                        CornerRadius="20"
+                        Width="6000" Height="2800">
+                            <!-- 고정 크기 설정 -->
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- 텍스트 블록 - 수직 중앙 정렬 -->
+                                <TextBlock x:Name="StatusMessage" Text="PCB 스캔 중..." 
+                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                FontSize="300" TextAlignment="Center"
+                                Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+
+                                <!-- 프로그레스 바 - 하단 배치 -->
+                                <ProgressBar x:Name="ProgressBar" Grid.Row="1" IsIndeterminate="True" 
+                                Width="5000" Height="200" Margin="0,200,0,100"
+                                Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+
+
+                </Grid> 
             </ScrollViewer>
         </Border>
 
