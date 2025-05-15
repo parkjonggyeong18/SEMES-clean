@@ -61,6 +61,7 @@ namespace semes
         private void PCBImage_Loaded(object sender, RoutedEventArgs e)
         {
             AdjustCanvasToImage();
+            FitImageToView();
         }
 
         private void AdjustCanvasToImage()
@@ -68,7 +69,7 @@ namespace semes
             // Canvas 크기를 이미지 크기에 맞게 설정
             if (PCBImage != null && DefectCanvas != null)
             {
-                double imageWidth = PCBImage.ActualWidth;
+                double imageWidth = PCBImage.ActualWidth;   
                 double imageHeight = PCBImage.ActualHeight;
 
                 // Canvas 크기를 이미지 크기와 정확히 일치시킴
@@ -83,6 +84,29 @@ namespace semes
                 Console.WriteLine($"Canvas 크기: {DefectCanvas.Width} x {DefectCanvas.Height}");
             }
         }
+
+        private void FitImageToView()
+        {
+            if (PCBImage == null || PCBImage.ActualWidth <= 0 || PCBScrollViewer == null)
+                return;
+
+            // 스크롤뷰어 크기와 이미지 크기 기반으로 적절한 스케일 계산
+            double scaleX = PCBScrollViewer.ActualWidth / PCBImage.ActualWidth;
+            double scaleY = PCBScrollViewer.ActualHeight / PCBImage.ActualHeight;
+
+            // 더 작은 비율을 선택하여 이미지가 완전히 보이게 함
+            double scale = Math.Min(scaleX, scaleY) * 0.95; // 약간의 여백을 위해 0.95 곱함
+
+            // 최소 스케일 값과 비교해서 더 작은 값을 사용
+            scale = Math.Min(scale, 0.055);
+
+            // 스케일 적용
+            PCBScaleTransform.ScaleX = scale;
+            PCBScaleTransform.ScaleY = scale;
+
+            Console.WriteLine($"초기 이미지 스케일: {scale}");
+        }
+
         #endregion
 
         #region Canvas 관련 함수
