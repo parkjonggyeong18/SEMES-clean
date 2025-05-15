@@ -213,63 +213,123 @@ namespace semes
         #region 불량검출 클릭 이벤트 리스너 **
         private async void DefectBtn_Click(object sender, RoutedEventArgs e)
         {
-            // 1. ZMap 생성
-            string zmapType = "slope_xy";
-            int numDefects = new Random().Next(0, 21);
-
-            var generator = new ZMapGenerator();
-            generator.Generate(zmapType, numDefects, out string csvPath, out string tifPath);
-
-            // 2. EXE 경로: 실행 디렉토리에 있는 Project4.exe
-            //string exePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Project4.exe");
-            string exePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Algorithm.exe");
-            string arguments = $"\"{csvPath}\"";
-
-            if (!File.Exists(exePath))
+            try
             {
-                MessageBox.Show($"EXE 파일이 존재하지 않습니다:\n{exePath}", "실행 오류");
-                return;
+                // 진행 상태 패널 표시
+                ProgressOverlay.Visibility = Visibility.Visible;
+                StatusMessage.Text = "PCB 스캔 중...";
+                ProgressBar.IsIndeterminate = true;
+
+                // 버튼 비활성화
+                DefectBtn.IsEnabled = false;
+                ClearBtn.IsEnabled = false;
+
+                // 비동기 작업으로 변경
+                await Task.Run(() =>
+                {
+                    Thread.Sleep(1000);
+
+                    // UI스레드에서 메시지 업데이트
+                    Dispatcher.Invoke(() =>
+                    {
+                        StatusMessage.Text = "ZMap 생성 중...";
+                    });
+
+                    // 1. ZMap 생성
+                    string zmapType = "slope_xy";
+                    int numDefects = new Random().Next(0, 21);
+
+                    var generator = new ZMapGenerator();
+                    generator.Generate(zmapType, numDefects, out string csvPath, out string tifPath);
+
+                    // 메시지 업데이트
+                    Dispatcher.Invoke(() =>
+                    {
+                        StatusMessage.Text = "이물질 검출 중...";
+                    });
+
+                    // 2. EXE 경로: 실행 디렉토리에 있는 Project4.exe
+                    //string exePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Project4.exe");
+                    string exePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Algorithm.exe");
+                    string arguments = $"\"{csvPath}\"";
+
+                    if (!File.Exists(exePath))
+                    {
+                        MessageBox.Show($"EXE 파일이 존재하지 않습니다:\n{exePath}", "실행 오류");
+                        return;
+                    }
+
+                    // 3. EXE 실행 및 결과 반영
+                    var result = RunDefectDetectionAndParseOutput(exePath, arguments);
+
+                    Dispatcher.Invoke(() =>
+                    {
+                        StatusMessage.Text = "결과 처리 중...";
+                    });
+
+                    // 결과 처리
+                    Dispatcher.Invoke(() =>
+                    {
+                        currentSerialNumber = result.Item1;
+                        List<DefectItem> items = result.Item2;
+
+
+                        // 기존 불량 항목 초기화
+                        defectItems.Clear();
+
+                        // 파싱된 불량 항목 추가
+                        foreach (var item in items)
+                        {
+                            defectItems.Add(item);
+                        }
+                    });
+                });
+
+                // 모든 작업 완료된 후 UI 업데이트
+                StatusMessage.Text = "검사 완료";
+                ProgressBar.IsIndeterminate = false;
+                ProgressBar.Value = 100;
+
+                await Task.Delay(1000);
+                ProgressOverlay.Visibility = Visibility.Collapsed;
+
+                // 버튼 활성화
+                DefectBtn.IsEnabled = true;
+                ClearBtn.IsEnabled = true;
+
+                // 결과에 따라 상태 메세지 표시
+                if (defectItems.Count == 0)
+                {
+                    MessageBox.Show("이물질이 검출되지 않았습니다. 정상 PCB입니다.", "검사 결과", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    MessageBox.Show($"{defectItems.Count}개의 이물질이 검출되었습니다.", "검사 결과", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+
+                // DB에 저장
+                bool saveSuccess = await _pcbInspectionService.SaveInspectionResultAsync(currentSerialNumber, defectItems);
+
+                if (saveSuccess)
+                {
+                    MessageBox.Show($"검사 결과가 DB에 저장되었습니다.\n시리얼 넘버: {currentSerialNumber}",
+                        "저장 성공", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    MessageBox.Show("DB 저장에 실패했습니다.", "저장 실패", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
-
-            // 3. EXE 실행 및 결과 반영
-            var result = RunDefectDetectionAndParseOutput(exePath, arguments);
-            currentSerialNumber = result.Item1;
-            List<DefectItem> items = result.Item2;
-
-
-            // 기존 불량 항목 초기화
-            defectItems.Clear();
-
-            // 파싱된 불량 항목 추가
-            foreach (var item in items)
+            catch (Exception ex)
             {
-                defectItems.Add(item);
-            }
+                MessageBox.Show($"검사 과정에서 오류가 발생했습니다: {ex.Message}", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
 
-            // 결과에 따라 상태 메세지 표시
-            if(defectItems.Count == 0)
-            {
-                MessageBox.Show("이물질이 검출되지 않았습니다. 정상 PCB입니다.", "검사 결과", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            else
-            {
-                MessageBox.Show($"{defectItems.Count}개의 이물질이 검출되었습니다.", "검사 결과", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-
-            // DB에 저장
-            bool saveSuccess = await _pcbInspectionService.SaveInspectionResultAsync(currentSerialNumber, defectItems);
-
-            if (saveSuccess)
-            {
-                MessageBox.Show($"검사 결과가 DB에 저장되었습니다.\n시리얼 넘버: {currentSerialNumber}",
-                    "저장 성공", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            else
-            {
-                MessageBox.Show("DB 저장에 실패했습니다.", "저장 실패", MessageBoxButton.OK, MessageBoxImage.Error);
+                // 오류 발생 시에도 UI 상태 정리
+                ProgressOverlay.Visibility = Visibility.Collapsed;
+                DefectBtn.IsEnabled = true;
+                ClearBtn.IsEnabled = true;
             }
         }
-
 
         // 알고리즘(exe) 실행 후 출력되는 XML 로그를 파싱하는 함수
         private Tuple<string, List<DefectItem>> RunDefectDetectionAndParseOutput(string exePath, string arguments = "")
@@ -287,7 +347,7 @@ namespace semes
                     Arguments = arguments,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
-                    CreateNoWindow = false  // 콘솔 창을 보이게 할 경우 false, 숨길 경우 true
+                    CreateNoWindow = true  // 콘솔 창을 보이게 할 경우 false, 숨길 경우 true
                 };
 
                 // 프로세스 실행 및 출력 캡처
