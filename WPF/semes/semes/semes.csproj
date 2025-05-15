@@ -14,6 +14,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Algorithm.exe" />
+    <None Remove="Resources\Algorithm.exe" />
     <None Remove="Resources\final_pcb_with_dies_and_defects6.tif" />
     <None Remove="Resources\pcb_with_dies.tif" />
     <None Remove="Resources\semes_comp.png" />
@@ -21,6 +23,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Algorithm.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Algorithm.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="semes_icon_cropped.ico" />
   </ItemGroup>
 

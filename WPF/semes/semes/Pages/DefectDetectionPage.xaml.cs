@@ -222,7 +222,7 @@ namespace semes
 
             // 2. EXE 경로: 실행 디렉토리에 있는 Project4.exe
             //string exePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Project4.exe");
-            string exePath = "C:\\Users\\SSAFY\\source\\repos\\Project4\\x64\\Release\\Project4.exe"; // 기본 경로 수정 필요
+            string exePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Algorithm.exe");
             string arguments = $"\"{csvPath}\"";
 
             if (!File.Exists(exePath))
