@@ -270,6 +270,11 @@
                     <Border Style="{StaticResource TechCardStyle}" Margin="10" Height="200">
                         <Grid Margin="10">
                             <DataGrid x:Name="InspectionTable" AutoGenerateColumns="False" HeadersVisibility="Column" IsReadOnly="True" CanUserResizeRows="False" SelectionMode="Single" Background="Transparent" BorderThickness="0">
+                                <!-- DataGrid에 하이테크 스크롤바 적용 -->
+                                <DataGrid.Resources>
+                                    <Style TargetType="ScrollBar" BasedOn="{StaticResource TechScrollBar}"/>
+                                    <Style TargetType="ScrollViewer" BasedOn="{StaticResource TechScrollViewer}"/>
+                                </DataGrid.Resources>
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="PCB ID" Binding="{Binding PcbId}" Width="*" />
                                     <DataGridTextColumn Header="검사 일시" Binding="{Binding InspectionDate}" Width="2*" />
