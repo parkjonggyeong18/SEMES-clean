@@ -23,11 +23,11 @@ namespace semes.Features.Auth.Views
 
             // 타이머 초기화
             timer1 = new DispatcherTimer();
-            timer1.Interval = TimeSpan.FromMilliseconds(50);
+            timer1.Interval = TimeSpan.FromMilliseconds(16);
             timer1.Tick += Timer1_Tick;
 
             timer2 = new DispatcherTimer();
-            timer2.Interval = TimeSpan.FromMilliseconds(50);
+            timer2.Interval = TimeSpan.FromMilliseconds(16);
             timer2.Tick += Timer2_Tick;
         }
 
@@ -44,7 +44,7 @@ namespace semes.Features.Auth.Views
                 Opacity += 0.05;
 
             // 프로그레스 업데이트
-            progress += 2;
+            progress += 4;
 
             // 100을 넘지 않도록 제한
             if (progress > 100) progress = 100;

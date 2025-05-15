@@ -95,7 +95,7 @@ namespace semes
                 btnDefectDetection.IsEnabled = false;
                 btnDefectStats.IsEnabled = false;
                 btnCommunity.IsEnabled = false;
-                btnAIChatBot.IsEnabled = false; // 🆕 AI 챗봇 버튼도 비활성화
+                //btnAIChatBot.IsEnabled = false; // 🆕 AI 챗봇 버튼도 비활성화
                 //btnIndustryNews.IsEnabled = false;
                 btnUserManagement.Visibility = Visibility.Collapsed;
 
