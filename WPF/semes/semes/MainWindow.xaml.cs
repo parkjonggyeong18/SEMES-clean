@@ -63,6 +63,13 @@ namespace semes
             SetActiveButton(btnCommunity);
         }
 
+        // 🆕 AI 챗봇 버튼 클릭 이벤트 추가
+        private void btnAIChatBot_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(new ChatBotPage());
+            SetActiveButton(btnAIChatBot);
+        }
+
         private void btnIndustryNews_Click(object sender, RoutedEventArgs e)
         {
             MainFrame.Navigate(new IndustryNewsPage());
@@ -88,6 +95,7 @@ namespace semes
                 btnDefectDetection.IsEnabled = false;
                 btnDefectStats.IsEnabled = false;
                 btnCommunity.IsEnabled = false;
+                btnAIChatBot.IsEnabled = false; // 🆕 AI 챗봇 버튼도 비활성화
                 //btnIndustryNews.IsEnabled = false;
                 btnUserManagement.Visibility = Visibility.Collapsed;
 
@@ -115,6 +123,7 @@ namespace semes
             btnDefectStats.Background = System.Windows.Media.Brushes.Transparent;
             btnUserManagement.Background = System.Windows.Media.Brushes.Transparent;
             btnCommunity.Background = System.Windows.Media.Brushes.Transparent;
+            btnAIChatBot.Background = System.Windows.Media.Brushes.Transparent; // 🆕 AI 챗봇 버튼 추가
             btnIndustryNews.Background = System.Windows.Media.Brushes.Transparent;
 
             activeButton.Background = (System.Windows.Media.Brush)FindResource("MaterialDesignPaper");
