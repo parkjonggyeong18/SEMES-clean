@@ -2,9 +2,9 @@
 using OpenQA.Selenium.Chrome;
 using System;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
-using System.Windows;
 
 namespace semes
 {
@@ -13,7 +13,8 @@ namespace semes
         public IndustryNewsDetailPage(string title, string url)
         {
             InitializeComponent();
-            NewsTitle.Text = title;
+            HeaderTitle.Text = title;     // fallback 텍스트 우선 표시
+
             LoadPageWithSelenium(title, url);
         }
 
@@ -36,20 +37,21 @@ namespace semes
                     Task.Delay(1500).Wait(); // 페이지 로딩 대기
 
                     string parsedTitle = "";
+                    string subtitle = "";
+                    string body = "";
+
                     try
                     {
                         parsedTitle = driver.FindElement(By.CssSelector("h2.media_end_head_headline")).Text;
                     }
                     catch { }
 
-                    string subtitle = "";
                     try
                     {
                         subtitle = driver.FindElement(By.CssSelector("span.media_end_head_info_datestamp_time")).Text;
                     }
                     catch { }
 
-                    string body = "";
                     try
                     {
                         body = driver.FindElement(By.CssSelector("#dic_area")).Text;
@@ -60,17 +62,28 @@ namespace semes
 
                     Dispatcher.Invoke(() =>
                     {
+                        // 제목 설정
                         if (!string.IsNullOrWhiteSpace(parsedTitle))
-                            NewsTitle.Text = parsedTitle;
+                        {
+                            HeaderTitle.Text = parsedTitle;
+                    
+                        }
+                        else
+                        {
+                            HeaderTitle.Text = fallbackTitle;
+                            
+                        }
 
+                        // 날짜 및 본문
                         NewsSubTitle.Text = subtitle;
                         NewsBody.Text = body;
 
-                        // 대표 이미지 1장만 표시
+                        // 이미지 (대표 1장)
                         if (imageElements.Count > 0)
                         {
                             var src = imageElements[0].GetAttribute("src");
-                            if (src.StartsWith("//")) src = "https:" + src;
+                            if (src.StartsWith("//"))
+                                src = "https:" + src;
 
                             var bitmap = new BitmapImage();
                             bitmap.BeginInit();
@@ -90,6 +103,22 @@ namespace semes
                     });
                 }
             });
+        }
+
+        private void BackButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (NavigationService?.CanGoBack == true)
+                NavigationService.GoBack();
+        }
+
+        private void PrevNews_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("이전 뉴스로 이동 (로직 구현 필요)");
+        }
+
+        private void NextNews_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("다음 뉴스로 이동 (로직 구현 필요)");
         }
     }
 }

@@ -7,25 +7,113 @@
       mc:Ignorable="d"
       Title="IndustryNewsDetailPage">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <Grid>
-            <materialDesign:Card Padding="16" 
-                                 Margin="10"
-                                UniformCornerRadius="4" 
-                                Background="White"
-                           >
-                <StackPanel>
-                    <!-- 제목 -->
-                    <TextBlock x:Name="NewsTitle"
-                               FontSize="26"
-                               FontWeight="Bold"
-                               TextAlignment="Center"
-                               Foreground="#222"
-                               Margin="0,0,0,10"
-                               TextWrapping="Wrap" />
+    <Page.Resources>
+        <LinearGradientBrush x:Key="HeaderGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#1976D2" Offset="0"/>
+            <GradientStop Color="#2196F3" Offset="1"/>
+        </LinearGradientBrush>
 
-                    <!-- 날짜/시간 -->
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,20">
+        <LinearGradientBrush x:Key="MainBackground" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#E3F2FD" Offset="0"/>
+            <GradientStop Color="#F5F5F5" Offset="1"/>
+        </LinearGradientBrush>
+
+        <Style x:Key="TechCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E1E5E9"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Margin" Value="20"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="#1976D2" BlurRadius="10" ShadowDepth="0" Opacity="0.1"/>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect Color="#1976D2" BlurRadius="20" ShadowDepth="0" Opacity="0.3"/>
+                        </Setter.Value>
+                    </Setter>
+                    <Setter Property="Background">
+                        <Setter.Value>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="#FFFFFF" Offset="0"/>
+                                <GradientStop Color="#F7F9FC" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Page.Resources>
+
+    <Grid Background="{StaticResource MainBackground}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- 헤더 -->
+        <Border Grid.Row="0" Background="{StaticResource HeaderGradient}" Padding="30,25">
+            <Border.Effect>
+                <DropShadowEffect Color="#1976D2" BlurRadius="15" ShadowDepth="3" Opacity="0.3"/>
+            </Border.Effect>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- 제목 및 아이콘 -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Background="White" Width="45" Height="45" CornerRadius="25" Margin="0,0,20,0">
+                        <Grid>
+                            <Ellipse Width="20" Height="20" Fill="#1976D2" RenderTransformOrigin="-0.75,0.571"/>
+                            <Path Data="M4,10 H16 M10,4 V16" Stroke="White" StrokeThickness="2"
+                                  HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,12,0,0"/>
+                        </Grid>
+                    </Border>
+
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Name="HeaderTitle"
+                                   FontSize="24"
+                                   FontWeight="Bold"
+                                   Foreground="White"
+                                   TextTrimming="CharacterEllipsis"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="800"/>
+                        <TextBlock Text="뉴스 내용 및 주요 이미지를 확인하세요"
+                                   FontSize="14"
+                                   Foreground="#E3F2FD"
+                                   Margin="0,5,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- 🔙 뒤로가기 버튼 (오른쪽 상단) -->
+                <Button Grid.Column="1"
+                        Click="BackButton_Click"
+                              Background="Transparent"
+                            BorderBrush="Transparent"
+                        Width="50"
+                        Height="40"
+                        Margin="10,0,0,0"
+                        Cursor="Hand"
+                        ToolTip="뒤로가기">
+                    <materialDesign:PackIcon Kind="ArrowLeft" Width="20" Height="20" Foreground="White"/>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- 본문 카드 -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <Border Style="{StaticResource TechCardStyle}">
+                <StackPanel Margin="10">
+
+                    <!-- 날짜 -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,16">
                         <materialDesign:PackIcon Kind="Clock" Width="16" Height="16" Margin="0,0,5,0" Foreground="Gray"/>
                         <TextBlock x:Name="NewsSubTitle"
                                    FontSize="12"
@@ -33,23 +121,24 @@
                                    VerticalAlignment="Center"/>
                     </StackPanel>
 
-                    <!-- 대표 이미지 (1장) -->
+                    <!-- 대표 이미지 -->
                     <Image x:Name="MainImage"
-                           MaxHeight="300"
+                           MaxHeight="320"
                            Stretch="Uniform"
                            HorizontalAlignment="Center"
                            Margin="0,0,0,20"
-                           Visibility="Collapsed" />
+                           Visibility="Collapsed"/>
 
-                    <!-- 본문 -->
+                    <!-- 본문 텍스트 -->
                     <TextBlock x:Name="NewsBody"
                                TextWrapping="Wrap"
                                FontSize="15"
                                Foreground="#333"
                                LineHeight="26"
-                               Margin="0,0,0,10"/>
+                               Margin="0,0,0,30"/>
+
                 </StackPanel>
-            </materialDesign:Card>
-        </Grid>
-    </ScrollViewer>
+            </Border>
+        </ScrollViewer>
+    </Grid>
 </Page>
