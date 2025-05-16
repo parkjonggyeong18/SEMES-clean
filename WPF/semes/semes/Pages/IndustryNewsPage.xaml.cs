@@ -219,20 +219,12 @@ namespace semes
         }
 
         // 뉴스 제목 클릭 시 링크 열기
-        private void TextBlock_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+      
+        private void Card_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (sender is TextBlock tb && tb.DataContext is NewsItem item)
+            if (sender is Border border && border.DataContext is NewsItem item)
             {
-                try
-                {
-                    // 제목과 링크를 함께 넘겨서 본문 파싱 후 렌더링
-                    var detailPage = new IndustryNewsDetailPage(item.Title, item.Link);
-                    NavigationService?.Navigate(detailPage);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("뉴스 본문을 열 수 없습니다: " + ex.Message);
-                }
+                NavigationService.Navigate(new IndustryNewsDetailPage(item.Title, item.Link));
             }
         }
     }

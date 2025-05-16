@@ -249,7 +249,10 @@
             <ItemsControl Name="NewsListView" Margin="20">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Border Style="{StaticResource TechCardStyle}" Cursor="Hand" Padding="16">
+                        <Border Style="{StaticResource TechCardStyle}" 
+        Cursor="Hand"
+        Padding="16"
+        MouseLeftButtonUp="Card_MouseLeftButtonUp">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -258,8 +261,7 @@
 
                                 <!-- 텍스트 -->
                                 <StackPanel Grid.Column="0" Margin="0,0,12,0">
-                                    <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="SemiBold" Foreground="#222" TextWrapping="Wrap"
-                                               MouseLeftButtonUp="TextBlock_MouseLeftButtonUp">
+                                    <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="SemiBold" Foreground="#222" TextWrapping="Wrap">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Cursor" Value="Hand"/>
