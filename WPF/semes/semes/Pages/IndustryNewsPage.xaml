@@ -216,10 +216,21 @@
 
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <!-- 뉴스 아이콘 -->
-                <Border Background="White" Width="45" Height="45" CornerRadius="25" Margin="0,0,20,0">
+                <Border Background="#FFFFFF" CornerRadius="50" Width="45" Height="45" Margin="0,0,20,0">
                     <Grid>
-                        <Ellipse Width="20" Height="20" Fill="#1976D2"/>
-                        <Path Data="M4,10 H16 M10,4 V16" Stroke="White" StrokeThickness="2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <!-- 뉴스/신문 아이콘 -->
+                        <Rectangle Width="26" Height="30" Fill="#1976D2" RadiusX="2" RadiusY="2"/>
+                        <Rectangle Width="22" Height="26" Fill="White" RadiusX="1" RadiusY="1" Margin="0,-1,0,0"/>
+
+                        <!-- 신문 텍스트 라인 -->
+                        <Rectangle Width="16" Height="2" Fill="#1976D2" Margin="0,-8,0,0"/>
+                        <Rectangle Width="12" Height="1.5" Fill="#1976D2" Margin="0,-4,0,0"/>
+                        <Rectangle Width="14" Height="1.5" Fill="#1976D2" Margin="0,0,0,0"/>
+                        <Rectangle Width="10" Height="1.5" Fill="#1976D2" Margin="0,4,0,0"/>
+                        <Rectangle Width="16" Height="1.5" Fill="#1976D2" Margin="0,8,0,0"/>
+
+                        <!-- 헤드라인 부분 -->
+                        <Rectangle Width="6" Height="6" Fill="#1976D2" Margin="-7,-7,0,0"/>
                     </Grid>
                 </Border>
 

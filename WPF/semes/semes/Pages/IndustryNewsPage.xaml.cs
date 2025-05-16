@@ -144,29 +144,42 @@ namespace semes
         // 썸네일 이미지를 비동기적으로 가져오는 메서드
         private async Task LoadThumbnailsAsync()
         {
+            var tasks = new List<Task>();
+
+            // 최대 동시 요청 수 제한 (예: 4개)
+            SemaphoreSlim semaphore = new SemaphoreSlim(4);
+
             for (int i = 0; i < newsList.Count; i++)
             {
-                try
-                {
-                    var item = newsList[i];
-                    string thumbnail = await FetchOgImageAsync(item.Link);
-                    if (!string.IsNullOrEmpty(thumbnail))
-                    {
-                        Dispatcher.Invoke(() =>
-                        {
-                            item.Thumbnail = thumbnail;
-                            // UI 업데이트를 위한 트릭 (ObservableCollection은 항목 변경 시 자동 갱신 안됨)
-                            var temp = newsList[i];
-                            newsList[i] = null;
-                            newsList[i] = temp;
-                        });
-                    }
-                }
-                catch { }
+                await semaphore.WaitAsync();
 
-                // 너무 빠른 요청으로 서버에 부담을 주지 않도록 지연
-                await Task.Delay(300);
+                int index = i;
+                tasks.Add(Task.Run(async () =>
+                {
+                    try
+                    {
+                        var item = newsList[index];
+                        string thumbnail = await FetchOgImageAsync(item.Link);
+                        if (!string.IsNullOrEmpty(thumbnail))
+                        {
+                            Dispatcher.Invoke(() =>
+                            {
+                                item.Thumbnail = thumbnail;
+                                var temp = newsList[index];
+                                newsList[index] = null;
+                                newsList[index] = temp;
+                            });
+                        }
+                    }
+                    catch { }
+                    finally
+                    {
+                        semaphore.Release();
+                    }
+                }));
             }
+
+            await Task.WhenAll(tasks);
         }
 
         // HTML 태그 제거
