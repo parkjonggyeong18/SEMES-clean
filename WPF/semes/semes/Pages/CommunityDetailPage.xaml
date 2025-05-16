@@ -1,7 +1,7 @@
 ﻿<Page x:Class="semes.Pages.CommunityDetailPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:converters="clr-namespace:semes.Converters"
+      xmlns:converters="clr-namespace:semes.Converters" xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
       Title="CommunityDetailPage">
     <Page.Resources>
         <converters:AuthorVisibilityConverter x:Key="AuthorVisibilityConverter"/>
@@ -304,7 +304,7 @@
         </Style>
     </Page.Resources>
 
-    <Grid Background="{StaticResource MainBackground}">
+        <Grid Background="{StaticResource MainBackground}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -316,38 +316,48 @@
                 <DropShadowEffect Color="#1976D2" BlurRadius="15" ShadowDepth="3" Opacity="0.3"/>
             </Border.Effect>
 
-            <StackPanel Orientation="Horizontal">
-                <!-- CPU 칩 아이콘 -->
-                <Border Background="#FFFFFF" 
-                        CornerRadius="50" 
-                        Width="50" 
-                        Height="50" 
-                        Margin="0,0,20,0">
-                    <Grid>
-                        <Rectangle Width="30" Height="30" Fill="#1976D2" RadiusX="3" RadiusY="3"/>
-                        <Rectangle Width="18" Height="18" Fill="White" RadiusX="2" RadiusY="2"/>
-                        <Rectangle Width="6" Height="2" Fill="#1976D2" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                        <Rectangle Width="6" Height="2" Fill="#1976D2" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                        <Rectangle Width="2" Height="6" Fill="#1976D2" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,10,0,0"/>
-                        <Rectangle Width="2" Height="6" Fill="#1976D2" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,10"/>
-                    </Grid>
-                </Border>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-                <StackPanel VerticalAlignment="Center">
-                    <TextBlock FontSize="28" 
-                               FontWeight="Bold" 
-                               Foreground="White" 
-                               Text="게시글 상세보기">
-                        <TextBlock.Effect>
-                            <DropShadowEffect Color="#1976D2" BlurRadius="10" ShadowDepth="2" Opacity="0.5"/>
-                        </TextBlock.Effect>
-                    </TextBlock>
-                    <TextBlock FontSize="14" 
-                               Foreground="#E3F2FD" 
-                               Text="SEMES 아산 사업장" 
-                               Margin="0,5,0,0"/>
+                <!-- 좌측 아이콘 + 텍스트 -->
+                <StackPanel Orientation="Horizontal" Grid.Column="0">
+                    <Border Background="#FFFFFF" CornerRadius="50" Width="50" Height="50" Margin="0,0,20,0">
+                        <Grid>
+                            <Rectangle Width="30" Height="30" Fill="#1976D2" RadiusX="3" RadiusY="3"/>
+                            <Rectangle Width="18" Height="18" Fill="White" RadiusX="2" RadiusY="2"/>
+                            <Rectangle Width="6" Height="2" Fill="#1976D2" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                            <Rectangle Width="6" Height="2" Fill="#1976D2" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <Rectangle Width="2" Height="6" Fill="#1976D2" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,10,0,0"/>
+                            <Rectangle Width="2" Height="6" Fill="#1976D2" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,10"/>
+                        </Grid>
+                    </Border>
+
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock FontSize="28" FontWeight="Bold" Foreground="White" Text="게시글 상세보기">
+                            <TextBlock.Effect>
+                                <DropShadowEffect Color="#1976D2" BlurRadius="10" ShadowDepth="2" Opacity="0.5"/>
+                            </TextBlock.Effect>
+                        </TextBlock>
+                        <TextBlock FontSize="14" Foreground="#E3F2FD" Text="SEMES 아산 사업장" Margin="0,5,0,0"/>
+                    </StackPanel>
                 </StackPanel>
-            </StackPanel>
+
+                <!-- 우측 뒤로가기 버튼 -->
+                <Button Grid.Column="1"
+                Click="Back_Click"
+                Style="{StaticResource MaterialDesignFlatButton}"
+                Width="50"
+                Height="40"
+                ToolTip="뒤로가기"
+                Cursor="Hand"
+                VerticalAlignment="Center"
+                HorizontalAlignment="Right">
+                    <materialDesign:PackIcon Kind="ArrowLeft" Width="24" Height="24" Foreground="White"/>
+                </Button>
+            </Grid>
         </Border>
 
         <!-- 메인 콘텐츠 영역 - 하이테크 스크롤바 적용 -->
@@ -432,21 +442,7 @@
                                 HorizontalAlignment="Right" 
                                 Margin="0,20,0,0">
                         <!-- 뒤로가기 버튼 -->
-                        <Button Style="{StaticResource SecondaryButton}"
-                                Click="Back_Click"
-                                Margin="0,0,15,0">
-                            <StackPanel Orientation="Horizontal">
-                                <!-- Back 아이콘 -->
-                                <Path Fill="#1976D2" 
-                                      Data="M19 7v4H5.83l3.58-3.59L8 6l-6 6 6 6 1.41-1.41L5.83 13H21V7z"
-                                      Stretch="Uniform"
-                                      Width="16"
-                                      Height="16"
-                                      Margin="0,0,8,0"/>
-                                <TextBlock Text="뒤로가기"/>
-                            </StackPanel>
-                        </Button>
-
+                       
                         <!-- 수정 버튼 -->
                         <Button Style="{StaticResource SecondaryButton}"
                                 Click="Edit_Click"
