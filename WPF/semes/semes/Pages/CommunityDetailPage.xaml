@@ -305,7 +305,7 @@
         </Style>
     </Page.Resources>
 
-    <Grid Background="{StaticResource MainBackground}">
+        <Grid Background="{StaticResource MainBackground}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
