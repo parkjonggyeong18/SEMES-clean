@@ -323,7 +323,7 @@
                                     <TextBlock Style="{StaticResource MaterialDesignHeadline6TextBlock}" Margin="8,0,0,0" Text="AI 불량 분석" VerticalAlignment="Center"/>
                                 </StackPanel>
                                 <Button x:Name="AIAnalysisBtn" Grid.Column="1" Style="{StaticResource MaterialDesignRaisedButton}" 
-                                        Background="{DynamicResource PrimaryHueMidBrush}" Content="GPT 분석 실행" 
+                                        Background="{DynamicResource PrimaryHueMidBrush}" Content="AI 분석 실행" 
                                         IsEnabled="False" Click="AIAnalysisBtn_Click"/>
                             </Grid>
 
@@ -389,16 +389,30 @@
                                             </StackPanel>
                                         </Border>
 
+
                                         <!-- 권장사항 -->
-                                        <Border Grid.Column="1" Background="#E8F5E9" CornerRadius="4" Padding="12" Margin="4,0,0,0">
+                                        <Border Grid.Column="1" Background="#E3F2FD" CornerRadius="4" Padding="12" Margin="4,0,0,0">
                                             <StackPanel>
                                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                                    <materialDesign:PackIcon Kind="LightbulbOutline" Width="20" Height="20" Foreground="#388E3C" VerticalAlignment="Center"/>
-                                                    <TextBlock Text="개선 권장사항" FontWeight="Medium" Foreground="#388E3C" Margin="4,0,0,0"/>
+                                                    <materialDesign:PackIcon Kind="LightbulbOutline" Width="20" Height="20" Foreground="#1976D2" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="개선 권장사항" FontWeight="Medium" Foreground="#1976D2" Margin="4,0,0,0"/>
                                                 </StackPanel>
-                                                <ListBox x:Name="RecommendationsList" BorderThickness="0" Background="Transparent" Padding="0" MaxHeight="80">
-                                                    <!-- 여기에 동적으로 권장사항들이 추가됩니다 -->
-                                                </ListBox>
+                                                <ScrollViewer Style="{StaticResource TechScrollViewer}" 
+                      MaxHeight="80" 
+                      VerticalScrollBarVisibility="Auto" 
+                      PanningMode="Both" 
+                      HorizontalScrollBarVisibility="Disabled">
+                                                    <!-- ListBox 대신 ItemsControl 사용 -->
+                                                    <ItemsControl x:Name="RecommendationsList" 
+                         Background="Transparent" 
+                         Padding="0">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <TextBlock Text="{Binding}" Margin="0,0,0,4" TextWrapping="Wrap" />
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </ScrollViewer>
                                             </StackPanel>
                                         </Border>
                                     </Grid>
