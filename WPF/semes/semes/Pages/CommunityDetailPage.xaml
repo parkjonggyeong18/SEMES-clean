@@ -316,11 +316,18 @@
                 <DropShadowEffect Color="#1976D2" BlurRadius="15" ShadowDepth="3" Opacity="0.3"/>
             </Border.Effect>
 
-            <StackPanel Orientation="Horizontal">
-                <!-- CPU 칩 아이콘 -->
-                <Border Background="#FFFFFF" CornerRadius="50" Width="45" Height="45" Margin="0,0,20,0">
-                    <Image Source="/Resources/board.png" Width="25" Height="25" Stretch="Uniform"/>
-                </Border>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- 좌측 아이콘 + 텍스트 -->
+                <StackPanel Orientation="Horizontal" Grid.Column="0">
+                    <!-- CPU 칩 아이콘 -->
+                    <Border Background="#FFFFFF" CornerRadius="50" Width="45" Height="45" Margin="0,0,20,0">
+                        <Image Source="/Resources/board.png" Width="25" Height="25" Stretch="Uniform"/>
+                    </Border>
 
                 <StackPanel VerticalAlignment="Center">
                     <TextBlock FontSize="28" 
