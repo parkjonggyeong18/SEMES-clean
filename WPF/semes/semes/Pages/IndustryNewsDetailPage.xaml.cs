@@ -1,6 +1,6 @@
-﻿using OpenQA.Selenium;
-using OpenQA.Selenium.Chrome;
+﻿using HtmlAgilityPack;
 using System;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,85 +13,114 @@ namespace semes
         public IndustryNewsDetailPage(string title, string url)
         {
             InitializeComponent();
-            HeaderTitle.Text = title;     // fallback 텍스트 우선 표시
-
-            LoadPageWithSelenium(title, url);
+            HeaderTitle.Text = title;
+            LoadPageWithHtmlAgilityPack(title, url);
         }
 
-        private async void LoadPageWithSelenium(string fallbackTitle, string url)
+        private async void LoadPageWithHtmlAgilityPack(string fallbackTitle, string url)
         {
-            await Task.Run(() =>
+            await Task.Run(async () =>
             {
-                var options = new ChromeOptions();
-                options.AddArgument("--headless=new");
-                options.AddArgument("--disable-gpu");
-                options.AddArgument("--no-sandbox");
-
-                var service = ChromeDriverService.CreateDefaultService();
-                service.HideCommandPromptWindow = true;
-
-                using var driver = new ChromeDriver(service, options);
                 try
                 {
-                    driver.Navigate().GoToUrl(url);
-                    Task.Delay(1500).Wait(); // 페이지 로딩 대기
+                    using var client = new HttpClient();
+                    client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0");
 
-                    string parsedTitle = "";
-                    string subtitle = "";
-                    string body = "";
+                    var html = await client.GetStringAsync(url);
 
-                    try
+                    var doc = new HtmlDocument();
+                    doc.LoadHtml(html);
+
+                    string title = doc.DocumentNode
+                        ?.SelectSingleNode("//h2[contains(@class,'headline')]")
+                        ?.InnerText?.Trim() ?? fallbackTitle;
+
+                    string time = doc.DocumentNode
+                        ?.SelectSingleNode("//span[contains(@class,'datestamp_time')]")
+                        ?.InnerText?.Trim() ?? "";
+
+                    var bodyNode = doc.DocumentNode.SelectSingleNode("//*[@id='dic_area']");
+
+                    string bodyText = "";
+                    string firstImage = "";
+
+                    if (bodyNode != null)
                     {
-                        parsedTitle = driver.FindElement(By.CssSelector("h2.media_end_head_headline")).Text;
-                    }
-                    catch { }
+                        foreach (var node in bodyNode.ChildNodes)
+                        {
+                            if (node.Name == "p" || node.Name == "br")
+                            {
+                                bodyText += "\n";
+                            }
+                            else if (node.Name == "img" && string.IsNullOrEmpty(firstImage))
+                            {
+                                firstImage = node.GetAttributeValue("src", "")
+                                            ?? node.GetAttributeValue("data-src", "")
+                                            ?? node.GetAttributeValue("data-original", "");
+                            }
+                            else
+                            {
+                                bodyText += node.InnerText.Trim();
+                            }
+                        }
 
-                    try
+                        bodyText = HtmlEntity.DeEntitize(bodyText).Trim();
+                    }
+
+                    // 🧠 fallback: og:image
+                    if (string.IsNullOrWhiteSpace(firstImage))
                     {
-                        subtitle = driver.FindElement(By.CssSelector("span.media_end_head_info_datestamp_time")).Text;
+                        var og = doc.DocumentNode.SelectSingleNode("//meta[@property='og:image']");
+                        if (og != null)
+                            firstImage = og.GetAttributeValue("content", "");
                     }
-                    catch { }
 
-                    try
+                    // 🧠 fallback: 기본 이미지
+                    if (string.IsNullOrWhiteSpace(firstImage))
                     {
-                        body = driver.FindElement(By.CssSelector("#dic_area")).Text;
+                        firstImage = "https://via.placeholder.com/800x400.png?text=No+Image";
                     }
-                    catch { }
 
-                    var imageElements = driver.FindElements(By.CssSelector("#dic_area img"));
+                    // 절대 경로 보정
+                    if (firstImage.StartsWith("//"))
+                        firstImage = "https:" + firstImage;
+                    else if (firstImage.StartsWith("/"))
+                    {
+                        var baseUri = new Uri(url);
+                        firstImage = baseUri.Scheme + "://" + baseUri.Host + firstImage;
+                    }
+
+                    // 디버깅 로그 (원하면 주석 해제)
+                    // Console.WriteLine("▶ 대표 이미지 URL: " + firstImage);
 
                     Dispatcher.Invoke(() =>
                     {
-                        // 제목 설정
-                        if (!string.IsNullOrWhiteSpace(parsedTitle))
-                        {
-                            HeaderTitle.Text = parsedTitle;
-                    
-                        }
-                        else
-                        {
-                            HeaderTitle.Text = fallbackTitle;
-                            
-                        }
+                        HeaderTitle.Text = title;
+                        NewsSubTitle.Text = time;
+                        NewsBody.Text = bodyText;
 
-                        // 날짜 및 본문
-                        NewsSubTitle.Text = subtitle;
-                        NewsBody.Text = body;
-
-                        // 이미지 (대표 1장)
-                        if (imageElements.Count > 0)
+                        try
                         {
-                            var src = imageElements[0].GetAttribute("src");
-                            if (src.StartsWith("//"))
-                                src = "https:" + src;
-
                             var bitmap = new BitmapImage();
                             bitmap.BeginInit();
-                            bitmap.UriSource = new Uri(src);
+                            bitmap.UriSource = new Uri(firstImage, UriKind.Absolute);
+                            bitmap.CacheOption = BitmapCacheOption.OnLoad;
                             bitmap.EndInit();
+
+                            // 실패 감지 (디버깅용)
+                            bitmap.DownloadFailed += (s, e) =>
+                            {
+                                MessageBox.Show("❌ 이미지 다운로드 실패: " + e.ErrorException?.Message);
+                                MainImage.Visibility = Visibility.Collapsed;
+                            };
 
                             MainImage.Source = bitmap;
                             MainImage.Visibility = Visibility.Visible;
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show("이미지 로딩 오류: " + ex.Message);
+                            MainImage.Visibility = Visibility.Collapsed;
                         }
                     });
                 }
@@ -100,6 +129,7 @@ namespace semes
                     Dispatcher.Invoke(() =>
                     {
                         NewsBody.Text = $"[본문 로딩 실패] {ex.Message}";
+                        MainImage.Visibility = Visibility.Collapsed;
                     });
                 }
             });
@@ -109,16 +139,6 @@ namespace semes
         {
             if (NavigationService?.CanGoBack == true)
                 NavigationService.GoBack();
-        }
-
-        private void PrevNews_Click(object sender, RoutedEventArgs e)
-        {
-            MessageBox.Show("이전 뉴스로 이동 (로직 구현 필요)");
-        }
-
-        private void NextNews_Click(object sender, RoutedEventArgs e)
-        {
-            MessageBox.Show("다음 뉴스로 이동 (로직 구현 필요)");
         }
     }
 }

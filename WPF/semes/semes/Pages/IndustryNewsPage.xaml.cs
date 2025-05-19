@@ -144,29 +144,42 @@ namespace semes
         // 썸네일 이미지를 비동기적으로 가져오는 메서드
         private async Task LoadThumbnailsAsync()
         {
+            var tasks = new List<Task>();
+
+            // 최대 동시 요청 수 제한 (예: 4개)
+            SemaphoreSlim semaphore = new SemaphoreSlim(4);
+
             for (int i = 0; i < newsList.Count; i++)
             {
-                try
-                {
-                    var item = newsList[i];
-                    string thumbnail = await FetchOgImageAsync(item.Link);
-                    if (!string.IsNullOrEmpty(thumbnail))
-                    {
-                        Dispatcher.Invoke(() =>
-                        {
-                            item.Thumbnail = thumbnail;
-                            // UI 업데이트를 위한 트릭 (ObservableCollection은 항목 변경 시 자동 갱신 안됨)
-                            var temp = newsList[i];
-                            newsList[i] = null;
-                            newsList[i] = temp;
-                        });
-                    }
-                }
-                catch { }
+                await semaphore.WaitAsync();
 
-                // 너무 빠른 요청으로 서버에 부담을 주지 않도록 지연
-                await Task.Delay(300);
+                int index = i;
+                tasks.Add(Task.Run(async () =>
+                {
+                    try
+                    {
+                        var item = newsList[index];
+                        string thumbnail = await FetchOgImageAsync(item.Link);
+                        if (!string.IsNullOrEmpty(thumbnail))
+                        {
+                            Dispatcher.Invoke(() =>
+                            {
+                                item.Thumbnail = thumbnail;
+                                var temp = newsList[index];
+                                newsList[index] = null;
+                                newsList[index] = temp;
+                            });
+                        }
+                    }
+                    catch { }
+                    finally
+                    {
+                        semaphore.Release();
+                    }
+                }));
             }
+
+            await Task.WhenAll(tasks);
         }
 
         // HTML 태그 제거
@@ -206,20 +219,12 @@ namespace semes
         }
 
         // 뉴스 제목 클릭 시 링크 열기
-        private void TextBlock_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+      
+        private void Card_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (sender is TextBlock tb && tb.DataContext is NewsItem item)
+            if (sender is Border border && border.DataContext is NewsItem item)
             {
-                try
-                {
-                    // 제목과 링크를 함께 넘겨서 본문 파싱 후 렌더링
-                    var detailPage = new IndustryNewsDetailPage(item.Title, item.Link);
-                    NavigationService?.Navigate(detailPage);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("뉴스 본문을 열 수 없습니다: " + ex.Message);
-                }
+                NavigationService.Navigate(new IndustryNewsDetailPage(item.Title, item.Link));
             }
         }
     }
