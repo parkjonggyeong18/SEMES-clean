@@ -220,12 +220,8 @@
 
                 <!-- 제목 및 아이콘 -->
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Background="White" Width="45" Height="45" CornerRadius="25" Margin="0,0,20,0">
-                        <Grid>
-                            <Ellipse Width="20" Height="20" Fill="#1976D2" RenderTransformOrigin="-0.75,0.571"/>
-                            <Path Data="M4,10 H16 M10,4 V16" Stroke="White" StrokeThickness="2"
-                                  HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,12,0,0"/>
-                        </Grid>
+                    <Border Background="#FFFFFF" CornerRadius="50" Width="45" Height="45" Margin="0,0,20,0">
+                        <Image Source="/Resources/news.png" Width="25" Height="25" Stretch="Uniform"/>
                     </Border>
 
                     <StackPanel VerticalAlignment="Center">

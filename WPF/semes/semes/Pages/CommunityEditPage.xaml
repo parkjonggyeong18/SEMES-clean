@@ -382,19 +382,8 @@
 
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <!-- CPU 칩 아이콘 (CommunityPage와 동일) -->
-                <Border Background="#FFFFFF" 
-                        CornerRadius="50" 
-                        Width="45" 
-                        Height="45" 
-                        Margin="0,0,20,0">
-                    <Grid>
-                        <Rectangle Width="25" Height="25" Fill="#1976D2" RadiusX="3" RadiusY="3"/>
-                        <Rectangle Width="15" Height="15" Fill="White" RadiusX="2" RadiusY="2"/>
-                        <Rectangle Width="5" Height="1" Fill="#1976D2" Margin="-15,0,0,0"/>
-                        <Rectangle Width="5" Height="1" Fill="#1976D2" Margin="15,0,0,0"/>
-                        <Rectangle Width="1" Height="5" Fill="#1976D2" Margin="0,-15,0,0"/>
-                        <Rectangle Width="1" Height="5" Fill="#1976D2" Margin="0,15,0,0"/>
-                    </Grid>
+                <Border Background="#FFFFFF" CornerRadius="50" Width="45" Height="45" Margin="0,0,20,0">
+                    <Image Source="/Resources/board.png" Width="25" Height="25" Stretch="Uniform"/>
                 </Border>
 
                 <StackPanel VerticalAlignment="Center">

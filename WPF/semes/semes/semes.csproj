@@ -15,8 +15,16 @@
 
   <ItemGroup>
     <None Remove="Algorithm.exe" />
+    <None Remove="Resources\ai.png" />
     <None Remove="Resources\Algorithm.exe" />
+    <None Remove="Resources\board.png" />
+    <None Remove="Resources\dashboard.png" />
+    <None Remove="Resources\defect.png" />
     <None Remove="Resources\final_pcb_with_dies_and_defects6.tif" />
+    <None Remove="Resources\graph.png" />
+    <None Remove="Resources\logout.png" />
+    <None Remove="Resources\member.png" />
+    <None Remove="Resources\news.png" />
     <None Remove="Resources\pcb_with_dies.tif" />
     <None Remove="Resources\semes_comp.png" />
     <None Remove="Resources\semes_logo.png" />
@@ -45,7 +53,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="Resources\ai.png" />
+    <Resource Include="Resources\board.png" />
+    <Resource Include="Resources\dashboard.png" />
+    <Resource Include="Resources\defect.png" />
     <Resource Include="Resources\final_pcb_with_dies_and_defects6.tif" />
+    <Resource Include="Resources\graph.png" />
+    <Resource Include="Resources\logout.png" />
+    <Resource Include="Resources\member.png" />
+    <Resource Include="Resources\news.png" />
     <Resource Include="Resources\pcb_with_dies.tif" />
     <Resource Include="Resources\semes_comp.png" />
     <Resource Include="Resources\semes_logo.png" />
