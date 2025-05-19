@@ -19,8 +19,7 @@ namespace semes.Services
         {
             _httpClient = new HttpClient();
 
-            // API 키는 App.config나 사용자 설정에서 가져와야 함
-            // 실제 애플리케이션에서는 더 안전한 방법으로 관리해야 함
+
             _apiKey = ConfigurationManager.AppSettings["OpenAIApiKey"] ?? "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";
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
         }
@@ -29,7 +28,7 @@ namespace semes.Services
         {
             var requestData = new
             {
-                model = "gpt-4-turbo", // 또는 다른 적절한 모델 (gpt-3.5-turbo)
+                model = "chatgpt-4o-latest", 
                 messages = new[]
                 {
                     new { role = "system", content = "You are a PCB defect analysis expert." },
