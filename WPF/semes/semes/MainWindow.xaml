@@ -194,7 +194,7 @@
                             Margin="5,20,5,5"
                             Click="btnDashboard_Click">
                             <StackPanel Width="70">
-                                <materialDesign:PackIcon Kind="ViewDashboard" Width="24" Height="24" HorizontalAlignment="Center"/>
+                                <Image Source="pack://application:,,,/Resources/dashboard.png" Width="24" Height="24" HorizontalAlignment="Center"/>
                                 <TextBlock Text="대시보드" HorizontalAlignment="Center" Margin="0,5,0,0" TextAlignment="Center"/>
                             </StackPanel>
                         </Button>
@@ -205,7 +205,7 @@
                             Margin="5"
                             Click="btnDefectDetection_Click">
                             <StackPanel Width="70">
-                                <materialDesign:PackIcon Kind="Chip" Width="24" Height="24" HorizontalAlignment="Center"/>
+                                <Image Source="pack://application:,,,/Resources/defect.png" Width="24" Height="24" HorizontalAlignment="Center"/>
                                 <TextBlock Text="PCB 불량 검출" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Margin="0,5,0,0"/>
                             </StackPanel>
                         </Button>
@@ -216,7 +216,7 @@
                             Margin="5"
                             Click="btnDefectStats_Click">
                             <StackPanel Width="70">
-                                <materialDesign:PackIcon Kind="ChartLine" Width="24" Height="24" HorizontalAlignment="Center"/>
+                                <Image Source="pack://application:,,,/Resources/graph.png" Width="24" Height="24" HorizontalAlignment="Center"/>
                                 <TextBlock Text="불량률 현황" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Margin="0,5,0,0"/>
                             </StackPanel>
                         </Button>
@@ -227,7 +227,7 @@
                             Margin="5"
                             Click="btnCommunity_Click">
                             <StackPanel Width="70">
-                                <materialDesign:PackIcon Kind="Forum" Width="24" Height="24" HorizontalAlignment="Center"/>
+                                <Image Source="pack://application:,,,/Resources/board.png" Width="24" Height="24" HorizontalAlignment="Center"/>
                                 <TextBlock Text="게시판" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Margin="0,5,0,0"/>
                             </StackPanel>
                         </Button>
@@ -239,7 +239,7 @@
                             Margin="5"
                             Click="btnAIChatBot_Click">
                             <StackPanel Width="70">
-                                <materialDesign:PackIcon Kind="Robot" Width="24" Height="24" HorizontalAlignment="Center"/>
+                                <Image Source="pack://application:,,,/Resources/ai.png" Width="24" Height="24" HorizontalAlignment="Center"/>
                                 <TextBlock Text="AI 챗봇" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Margin="0,5,0,0"/>
                             </StackPanel>
                         </Button>
@@ -250,7 +250,7 @@
                             Margin="5"
                             Click="btnIndustryNews_Click">
                             <StackPanel Width="70">
-                                <materialDesign:PackIcon Kind="Newspaper" Width="24" Height="24" HorizontalAlignment="Center"/>
+                                <Image Source="pack://application:,,,/Resources/news.png" Width="24" Height="24" HorizontalAlignment="Center"/>
                                 <TextBlock Text="반도체 뉴스" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Margin="0,5,0,0"/>
                             </StackPanel>
                         </Button>
@@ -262,7 +262,7 @@
                             Click="btnUserManagement_Click"
                             Visibility="Collapsed">
                             <StackPanel Width="70">
-                                <materialDesign:PackIcon Kind="AccountGroup" Width="24" Height="24" HorizontalAlignment="Center"/>
+                                <Image Source="pack://application:,,,/Resources/member.png" Width="24" Height="24" HorizontalAlignment="Center"/>
                                 <TextBlock Text="회원관리" HorizontalAlignment="Center" TextAlignment="Center" Margin="0,5,0,0"/>
                             </StackPanel>
                         </Button>
@@ -277,7 +277,7 @@
                     Margin="5,0,5,10"
                     Click="btnLogout_Click">
                     <StackPanel Width="70">
-                        <materialDesign:PackIcon Kind="Logout" Width="24" Height="24" HorizontalAlignment="Center"/>
+                        <Image Source="pack://application:,,,/Resources/logout.png" Width="24" Height="24" HorizontalAlignment="Center"/>
                         <TextBlock Text="로그아웃" HorizontalAlignment="Center" TextAlignment="Center" Margin="0,5,0,0"/>
                     </StackPanel>
                 </Button>

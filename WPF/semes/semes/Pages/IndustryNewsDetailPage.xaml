@@ -200,21 +200,7 @@
 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <Border Background="#FFFFFF" CornerRadius="50" Width="45" Height="45" Margin="0,0,20,0">
-                        <Grid>
-                            <!-- 뉴스/신문 아이콘 -->
-                            <Rectangle Width="26" Height="30" Fill="#1976D2" RadiusX="2" RadiusY="2"/>
-                            <Rectangle Width="22" Height="26" Fill="White" RadiusX="1" RadiusY="1" Margin="0,-1,0,0"/>
-
-                            <!-- 신문 텍스트 라인 -->
-                            <Rectangle Width="16" Height="2" Fill="#1976D2" Margin="0,-8,0,0"/>
-                            <Rectangle Width="12" Height="1.5" Fill="#1976D2" Margin="0,-4,0,0"/>
-                            <Rectangle Width="14" Height="1.5" Fill="#1976D2" Margin="0,0,0,0"/>
-                            <Rectangle Width="10" Height="1.5" Fill="#1976D2" Margin="0,4,0,0"/>
-                            <Rectangle Width="16" Height="1.5" Fill="#1976D2" Margin="0,8,0,0"/>
-
-                            <!-- 헤드라인 부분 -->
-                            <Rectangle Width="6" Height="6" Fill="#1976D2" Margin="-7,-7,0,0"/>
-                        </Grid>
+                        <Image Source="/Resources/news.png" Width="25" Height="25" Stretch="Uniform"/>
                     </Border>
 
                     <StackPanel VerticalAlignment="Center">
