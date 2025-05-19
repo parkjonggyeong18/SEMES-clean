@@ -383,7 +383,7 @@
                                         </Border>
 
 
-                                        <!-- 권장사항 -->
+                                        <!-- 권장사항 수정 버전 -->
                                         <Border Grid.Column="1" Background="#E3F2FD" CornerRadius="4" Padding="12" Margin="4,0,0,0">
                                             <StackPanel>
                                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
@@ -391,17 +391,22 @@
                                                     <TextBlock Text="개선 권장사항" FontWeight="Medium" Foreground="#1976D2" Margin="4,0,0,0"/>
                                                 </StackPanel>
                                                 <ScrollViewer Style="{StaticResource TechScrollViewer}" 
-                      MaxHeight="80" 
-                      VerticalScrollBarVisibility="Auto" 
-                      PanningMode="Both" 
-                      HorizontalScrollBarVisibility="Disabled">
-                                                    <!-- ListBox 대신 ItemsControl 사용 -->
+                     MaxHeight="80" 
+                     VerticalScrollBarVisibility="Auto" 
+                     PanningMode="Both" 
+                     HorizontalScrollBarVisibility="Disabled">
+                                                    <!-- 수정된 ItemsControl 구성 -->
                                                     <ItemsControl x:Name="RecommendationsList" 
                          Background="Transparent" 
-                         Padding="0">
+                         Padding="0"
+                         HorizontalContentAlignment="Stretch">
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate>
-                                                                <TextBlock Text="{Binding}" Margin="0,0,0,4" TextWrapping="Wrap" />
+                                                                <TextBlock Text="{Binding}" 
+                                 Margin="0,0,0,8" 
+                                 TextWrapping="Wrap"
+                                 HorizontalAlignment="Stretch"
+                                 TextAlignment="Left"/>
                                                             </DataTemplate>
                                                         </ItemsControl.ItemTemplate>
                                                     </ItemsControl>
