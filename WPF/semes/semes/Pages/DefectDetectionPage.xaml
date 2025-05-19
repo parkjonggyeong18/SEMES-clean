@@ -309,6 +309,115 @@
                             </Grid>
                         </ScrollViewer>
                     </Border>
+
+                    <!-- AI 분석 패널 추가 -->
+                    <materialDesign:Card Margin="0,10,0,10" Padding="16">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Brain" Width="24" Height="24" Foreground="#1976D2" VerticalAlignment="Center"/>
+                                    <TextBlock Style="{StaticResource MaterialDesignHeadline6TextBlock}" Margin="8,0,0,0" Text="AI 불량 분석" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <Button x:Name="AIAnalysisBtn" Grid.Column="1" Style="{StaticResource MaterialDesignRaisedButton}" 
+                                        Background="{DynamicResource PrimaryHueMidBrush}" Content="GPT 분석 실행" 
+                                        IsEnabled="False" Click="AIAnalysisBtn_Click"/>
+                            </Grid>
+
+                            <!-- 초기 상태 표시 -->
+                            <Grid x:Name="AIInitialMessage" Visibility="Visible">
+                                <Border Background="#F5F5F5" CornerRadius="4" Padding="16">
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="AlertCircleOutline" Width="48" Height="48" HorizontalAlignment="Center" Foreground="#757575"/>
+                                        <TextBlock Text="불량 검출이 완료된 후 AI 분석을 실행할 수 있습니다." 
+                                                  TextAlignment="Center" Foreground="#757575" Margin="0,8,0,0"/>
+                                        <TextBlock Text="다양한 지식 기반 인사이트를 제공합니다." 
+                                                  TextAlignment="Center" Foreground="#757575" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <!-- 로딩 표시 -->
+                            <Grid x:Name="AILoadingMessage" Visibility="Collapsed">
+                                <Border Background="#E3F2FD" CornerRadius="4" Padding="16">
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <ProgressBar IsIndeterminate="True" Style="{StaticResource MaterialDesignCircularProgressBar}" 
+                                                    Value="0" Width="48" Height="48" Margin="0,0,0,16"/>
+                                        <TextBlock Text="데이터 분석 중..." FontWeight="Medium" Foreground="#1976D2" TextAlignment="Center"/>
+                                        <TextBlock Text="AI 모델이 불량 패턴을 분석하고 있습니다" TextAlignment="Center" Foreground="#616161" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <!-- 분석 결과 표시 영역 -->
+                            <Grid x:Name="AIAnalysisResults" Visibility="Collapsed">
+                                <StackPanel>
+                                    <!-- 불량 유형 분석 -->
+                                    <Border Background="#E3F2FD" CornerRadius="4" Padding="12" Margin="0,0,0,8">
+                                        <StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                                <materialDesign:PackIcon Kind="CheckCircleOutline" Width="20" Height="20" Foreground="#1976D2" VerticalAlignment="Center"/>
+                                                <TextBlock Text="불량 유형 분석" FontWeight="Medium" Foreground="#1976D2" Margin="4,0,0,0"/>
+                                            </StackPanel>
+
+                                            <StackPanel x:Name="DefectTypesList">
+                                                <!-- 여기에 동적으로 불량 유형들이 추가됩니다 -->
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- 심각도 및 권장사항 -->
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- 심각도 평가 -->
+                                        <Border Grid.Column="0" Background="#FFF8E1" CornerRadius="4" Padding="12" Margin="0,0,4,0">
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                                    <materialDesign:PackIcon Kind="AlertOutline" Width="20" Height="20" Foreground="#FFA000" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="심각도 평가" FontWeight="Medium" Foreground="#FFA000" Margin="4,0,0,0"/>
+                                                </StackPanel>
+                                                <Border x:Name="SeverityIndicator" Background="#FFECB3" CornerRadius="16" Padding="8,4" HorizontalAlignment="Center">
+                                                    <TextBlock x:Name="SeverityText" Text="중간" Foreground="#FF6F00" FontWeight="Medium" HorizontalAlignment="Center"/>
+                                                </Border>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- 권장사항 -->
+                                        <Border Grid.Column="1" Background="#E8F5E9" CornerRadius="4" Padding="12" Margin="4,0,0,0">
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                                    <materialDesign:PackIcon Kind="LightbulbOutline" Width="20" Height="20" Foreground="#388E3C" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="개선 권장사항" FontWeight="Medium" Foreground="#388E3C" Margin="4,0,0,0"/>
+                                                </StackPanel>
+                                                <ListBox x:Name="RecommendationsList" BorderThickness="0" Background="Transparent" Padding="0" MaxHeight="80">
+                                                    <!-- 여기에 동적으로 권장사항들이 추가됩니다 -->
+                                                </ListBox>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- 과거 데이터 분석 -->
+                                    <Border Background="#FAFAFA" CornerRadius="4" Padding="12">
+                                        <StackPanel>
+                                            <TextBlock Text="과거 데이터 분석" FontWeight="Medium" Foreground="#424242" Margin="0,0,0,8"/>
+                                            <TextBlock x:Name="HistoricalDataText" Text="" TextWrapping="Wrap" Foreground="#616161"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- 초기화 버튼 -->
+                                    <Button x:Name="ResetAnalysisBtn" Style="{StaticResource MaterialDesignOutlinedButton}" 
+                                            Margin="0,8,0,0" Content="분석 초기화" HorizontalAlignment="Right" Click="ResetAnalysisBtn_Click"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </materialDesign:Card>
                 </StackPanel>
 
                 <!-- 우측 정보 카드 영역 -->

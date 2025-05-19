@@ -2,26 +2,22 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Diagnostics;
-using System.Printing;
 using System.Text.RegularExpressions;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Xml;
-using System.Xml.Serialization;
 using System.IO;
 using System.Windows.Input;
-
+using System.Threading.Tasks;
+using System.Threading;
+using System.Collections.Generic;
 using semes.Services;
 
 namespace semes
 {
-    //<summary>
-    //DefectDetectionPage.xaml에 대한 상호 작용 논리
-    //</summary>
     public partial class DefectDetectionPage : Page
     {
         // 불량 목록
@@ -32,6 +28,7 @@ namespace semes
 
         // 서비스 인스턴스
         private readonly PcbInspectionService _pcbInspectionService;
+        private readonly OpenAIService _openAIService;
 
         // 불량 마커를 관리하기 위한 딕셔너리 (ID로 찾기 쉽게)
         private Dictionary<int, UIElement> defectMarkers = new Dictionary<int, UIElement>();
@@ -40,12 +37,16 @@ namespace semes
         private const double ORIGINAL_IMAGE_WIDTH = 12000;
         private const double ORIGINAL_IMAGE_HEIGHT = 4000;
 
+        // AI 분석 완료 상태
+        private bool isAiAnalysisComplete = false;
+
         public DefectDetectionPage()
         {
             InitializeComponent();
 
             // 서비스 인스턴스 생성
             _pcbInspectionService = new PcbInspectionService();
+            _openAIService = new OpenAIService();
 
             // defectItems 내용이 변할때마다 호출할 함수 등록
             defectItems = new ObservableCollection<DefectItem>();
@@ -69,7 +70,7 @@ namespace semes
             // Canvas 크기를 이미지 크기에 맞게 설정
             if (PCBImage != null && DefectCanvas != null)
             {
-                double imageWidth = PCBImage.ActualWidth;   
+                double imageWidth = PCBImage.ActualWidth;
                 double imageHeight = PCBImage.ActualHeight;
 
                 // Canvas 크기를 이미지 크기와 정확히 일치시킴
@@ -106,7 +107,6 @@ namespace semes
 
             Console.WriteLine($"초기 이미지 스케일: {scale}");
         }
-
         #endregion
 
         #region Canvas 관련 함수
@@ -325,6 +325,13 @@ namespace semes
                 {
                     MessageBox.Show("DB 저장에 실패했습니다.", "저장 실패", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
+
+                // AI 분석 버튼 활성화 (추가된 부분)
+                AIAnalysisBtn.IsEnabled = (defectItems.Count > 0);
+                isAiAnalysisComplete = false;
+                AIInitialMessage.Visibility = Visibility.Visible;
+                AILoadingMessage.Visibility = Visibility.Collapsed;
+                AIAnalysisResults.Visibility = Visibility.Collapsed;
             }
             catch (Exception ex)
             {
@@ -456,7 +463,6 @@ namespace semes
         #endregion
 
         #region 초기화 클릭 이벤트 리스너
-
         private void ClearBtn_Click(object sender, RoutedEventArgs e)
         {
             DefectCanvas.Children.Clear();
@@ -478,6 +484,16 @@ namespace semes
 
             // 현재 PCB 시리얼 넘버 초기화
             currentSerialNumber = "";
+
+            // AI 분석 관련 UI 초기화 (추가된 부분)
+            AIAnalysisBtn.IsEnabled = false;
+            isAiAnalysisComplete = false;
+            AIInitialMessage.Visibility = Visibility.Visible;
+            AILoadingMessage.Visibility = Visibility.Collapsed;
+            AIAnalysisResults.Visibility = Visibility.Collapsed;
+            DefectTypesList.Children.Clear();
+            RecommendationsList.Items.Clear();
+            HistoricalDataText.Text = "";
         }
         #endregion
 
@@ -749,7 +765,7 @@ namespace semes
                 }
             }
         }
-        
+
         //  불량 상세 정보 갱신 관련 함수
         private void UpdateDefectDetails(DefectItem defect)
         {
@@ -789,6 +805,231 @@ namespace semes
                 e.Handled = true;
             }
         }
+
+        #region AI 불량 분석 기능
+        // 불량 유형 정보 클래스
+        public class DefectTypeInfo
+        {
+            public string TypeName { get; set; }
+            public int Count { get; set; }
+            public int Confidence { get; set; }
+        }
+
+        // AI 분석 결과 클래스
+        public class AnalysisResult
+        {
+            public List<DefectTypeInfo> DefectTypes { get; set; }
+            public string SeverityLevel { get; set; }
+            public List<string> Recommendations { get; set; }
+            public string HistoricalContext { get; set; }
+        }
+
+        // AI 분석 버튼 클릭 이벤트
+        private async void AIAnalysisBtn_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // 분석 중복 실행 방지
+                if (isAiAnalysisComplete)
+                {
+                    MessageBox.Show("이미 분석이 완료되었습니다. 새로운 분석을 위해 초기화 후 다시 시도해주세요.",
+                        "알림", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                // 로딩 상태 표시
+                AIInitialMessage.Visibility = Visibility.Collapsed;
+                AILoadingMessage.Visibility = Visibility.Visible;
+                AIAnalysisResults.Visibility = Visibility.Collapsed;
+
+                // 버튼 비활성화
+                AIAnalysisBtn.IsEnabled = false;
+
+                // 불량 데이터 준비
+                StringBuilder defectDataBuilder = new StringBuilder();
+                defectDataBuilder.AppendLine($"PCB 시리얼 번호: {currentSerialNumber}");
+                defectDataBuilder.AppendLine($"검출된 불량 수: {defectItems.Count}");
+
+                foreach (var defect in defectItems)
+                {
+                    defectDataBuilder.AppendLine($"불량ID: {defect.Id}, 위치: ({defect.X}, {defect.Y}), 크기: {defect.Width}x{defect.Height}");
+                }
+
+                // GPT 프롬프트 구성
+                string prompt = $@"
+당신은 PCB 불량 전문가입니다. 다음 PCB 불량 데이터를 분석하여 다음 형식으로 응답해주세요:
+
+1. 불량 유형 분석: 이 PCB에서 발견된 불량의 유형을 분류해주세요. 각 유형별 개수와 신뢰도(%)를 제시해주세요.
+2. 심각도 평가: '낮음', '중간', '높음' 중 하나로 평가해주세요.
+3. 개선 권장사항: 3가지 이내로 구체적인 권장사항을 제시해주세요.
+4. 과거 데이터 분석: 이 PCB의 불량 패턴에 대한 인사이트를 제공해주세요.
+
+PCB 불량 데이터:
+{defectDataBuilder.ToString()}
+
+응답 형식은 다음과 같이 JSON 형식으로 작성해주세요:
+{{
+  ""defectTypes"": [
+    {{ ""typeName"": ""불량유형명"", ""count"": 숫자, ""confidence"": 숫자 }},
+    ...
+  ],
+  ""severityLevel"": ""낮음/중간/높음"",
+  ""recommendations"": [
+    ""권장사항1"",
+    ""권장사항2"",
+    ""권장사항3""
+  ],
+  ""historicalContext"": ""과거 데이터 분석 내용""
+}}
+";
+
+                // API 호출 (비동기)
+                AnalysisResult result = await _openAIService.GetAnalysisFromGPT(prompt);
+
+                // 분석 결과 표시
+                DisplayAnalysisResults(result);
+
+                // 상태 업데이트
+                AILoadingMessage.Visibility = Visibility.Collapsed;
+                AIAnalysisResults.Visibility = Visibility.Visible;
+                isAiAnalysisComplete = true;
+
+                // 버튼 활성화 (사용자가 다시 분석할 수 있도록)
+                AIAnalysisBtn.IsEnabled = true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"AI 분석 중 오류가 발생했습니다: {ex.Message}", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                // 오류 발생 시 초기 상태로 복귀
+                AILoadingMessage.Visibility = Visibility.Collapsed;
+                AIInitialMessage.Visibility = Visibility.Visible;
+                AIAnalysisBtn.IsEnabled = (defectItems.Count > 0);
+            }
+        }
+
+        // 분석 초기화 버튼 클릭 이벤트
+        private void ResetAnalysisBtn_Click(object sender, RoutedEventArgs e)
+        {
+            // 상태 초기화
+            AIAnalysisResults.Visibility = Visibility.Collapsed;
+            AIInitialMessage.Visibility = Visibility.Visible;
+            isAiAnalysisComplete = false;
+            AIAnalysisBtn.IsEnabled = (defectItems.Count > 0);
+
+            // 내용 초기화
+            DefectTypesList.Children.Clear();
+            RecommendationsList.Items.Clear();
+            HistoricalDataText.Text = "";
+        }
+
+        // 분석 결과 표시 함수
+        private void DisplayAnalysisResults(AnalysisResult result)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                // 불량 유형 목록 표시
+                DefectTypesList.Children.Clear();
+                foreach (var defectType in result.DefectTypes)
+                {
+                    // 유형별 항목 추가
+                    if (defectType.Count > 0)
+                    {
+                        Grid typeGrid = new Grid();
+                        typeGrid.Margin = new Thickness(0, 4, 0, 4);
+
+                        typeGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                        typeGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star) });
+
+                        // 유형 이름
+                        TextBlock typeName = new TextBlock
+                        {
+                            Text = $"{defectType.TypeName} ({defectType.Count}개)",
+                            Foreground = new SolidColorBrush(Color.FromRgb(33, 33, 33)),
+                            VerticalAlignment = VerticalAlignment.Center
+                        };
+                        Grid.SetColumn(typeName, 0);
+                        typeGrid.Children.Add(typeName);
+
+                        // 신뢰도 바
+                        StackPanel confidencePanel = new StackPanel
+                        {
+                            Orientation = Orientation.Horizontal,
+                            HorizontalAlignment = HorizontalAlignment.Right,
+                            VerticalAlignment = VerticalAlignment.Center
+                        };
+
+                        // 신뢰도 프로그레스 바
+                        ProgressBar confidenceBar = new ProgressBar
+                        {
+                            Value = defectType.Confidence,
+                            Maximum = 100,
+                            Width = 100,
+                            Height = 8,
+                            Margin = new Thickness(0, 0, 8, 0),
+                            Foreground = new SolidColorBrush(Color.FromRgb(25, 118, 210))
+                        };
+
+                        // 신뢰도 텍스트
+                        TextBlock confidenceText = new TextBlock
+                        {
+                            Text = $"{defectType.Confidence}%",
+                            Foreground = new SolidColorBrush(Color.FromRgb(97, 97, 97)),
+                            Width = 40
+                        };
+
+                        confidencePanel.Children.Add(confidenceBar);
+                        confidencePanel.Children.Add(confidenceText);
+
+                        Grid.SetColumn(confidencePanel, 1);
+                        typeGrid.Children.Add(confidencePanel);
+
+                        DefectTypesList.Children.Add(typeGrid);
+                    }
+                }
+
+                // 심각도 표시
+                SeverityText.Text = result.SeverityLevel;
+
+                // 심각도에 따른 색상 설정
+                if (result.SeverityLevel == "낮음")
+                {
+                    SeverityIndicator.Background = new SolidColorBrush(Color.FromRgb(200, 230, 201));
+                    SeverityText.Foreground = new SolidColorBrush(Color.FromRgb(46, 125, 50));
+                }
+                else if (result.SeverityLevel == "중간")
+                {
+                    SeverityIndicator.Background = new SolidColorBrush(Color.FromRgb(255, 236, 179));
+                    SeverityText.Foreground = new SolidColorBrush(Color.FromRgb(255, 111, 0));
+                }
+                else // 높음
+                {
+                    SeverityIndicator.Background = new SolidColorBrush(Color.FromRgb(255, 205, 210));
+                    SeverityText.Foreground = new SolidColorBrush(Color.FromRgb(198, 40, 40));
+                }
+
+                // 권장사항 목록
+                RecommendationsList.Items.Clear();
+                foreach (var recommendation in result.Recommendations)
+                {
+                    ListBoxItem item = new ListBoxItem();
+
+                    TextBlock text = new TextBlock
+                    {
+                        Text = recommendation,
+                        TextWrapping = TextWrapping.Wrap,
+                        Foreground = new SolidColorBrush(Color.FromRgb(33, 33, 33))
+                    };
+
+                    item.Content = text;
+                    RecommendationsList.Items.Add(item);
+                }
+
+                // 과거 데이터 분석
+                HistoricalDataText.Text = result.HistoricalContext;
+            });
+        }
+        #endregion
 
         // 불량 항목 클래스
         public class DefectItem
