@@ -20,25 +20,25 @@ namespace semes
 {
     public partial class DefectDetectionPage : Page
     {
-        // 불량 목록
-        private ObservableCollection<DefectItem> defectItems;
+        // 정적 변수로 상태를 유지 (애플리케이션 전체에서 공유)
+        private static ObservableCollection<DefectItem> _defectItems = new ObservableCollection<DefectItem>();
+        private static string _currentSerialNumber = "";
+        private static bool _isAiAnalysisComplete = false;
+        private static List<DefectTypeInfo> _defectTypes = null;
+        private static string _severityLevel = null;
+        private static List<string> _recommendations = null;
+        private static string _historicalContext = null;
 
-        // 현재 PCB 시리얼 넘버
-        private string currentSerialNumber;
+        // 불량 마커를 관리하기 위한 딕셔너리 (ID로 찾기 쉽게)
+        private Dictionary<int, UIElement> defectMarkers = new Dictionary<int, UIElement>();
 
         // 서비스 인스턴스
         private readonly PcbInspectionService _pcbInspectionService;
         private readonly OpenAIService _openAIService;
 
-        // 불량 마커를 관리하기 위한 딕셔너리 (ID로 찾기 쉽게)
-        private Dictionary<int, UIElement> defectMarkers = new Dictionary<int, UIElement>();
-
         // PCB 이미지 크기
         private const double ORIGINAL_IMAGE_WIDTH = 12000;
         private const double ORIGINAL_IMAGE_HEIGHT = 4000;
-
-        // AI 분석 완료 상태
-        private bool isAiAnalysisComplete = false;
 
         public DefectDetectionPage()
         {
@@ -49,13 +49,57 @@ namespace semes
             _openAIService = new OpenAIService();
 
             // defectItems 내용이 변할때마다 호출할 함수 등록
-            defectItems = new ObservableCollection<DefectItem>();
-            defectItems.CollectionChanged += DefectItems_CollectionChanged;
+            _defectItems.CollectionChanged += DefectItems_CollectionChanged;
 
             // PCBImage가 로드될 때 실행될 함수
             PCBImage.Loaded += PCBImage_Loaded;
 
             PCBContainer.MouseWheel += PCBContainer_MouseWheel;
+
+            // 페이지 로드 이벤트 핸들러 추가
+            this.Loaded += DefectDetectionPage_Loaded;
+        }
+
+        // 페이지가 로드될 때 이전 상태 복원
+        private void DefectDetectionPage_Loaded(object sender, RoutedEventArgs e)
+        {
+            // 시리얼 번호 표시 업데이트
+            if (!string.IsNullOrEmpty(_currentSerialNumber))
+            {
+                SerialNumberValue.Text = _currentSerialNumber;
+            }
+
+            // 불량 데이터가 있으면 UI 업데이트
+            if (_defectItems.Count > 0)
+            {
+                UpdateDefectResultsList();
+                AIAnalysisBtn.IsEnabled = true;
+
+                // 모든 불량 마커 재생성
+                foreach (var defect in _defectItems)
+                {
+                    AddDefectMarker(defect);
+                }
+            }
+
+            // AI 분석 상태 복원
+            if (_isAiAnalysisComplete)
+            {
+                AIInitialMessage.Visibility = Visibility.Collapsed;
+                AILoadingMessage.Visibility = Visibility.Collapsed;
+                AIAnalysisResults.Visibility = Visibility.Visible;
+
+                // AI 분석 결과 표시
+                var result = new AnalysisResult
+                {
+                    DefectTypes = _defectTypes,
+                    SeverityLevel = _severityLevel,
+                    Recommendations = _recommendations,
+                    HistoricalContext = _historicalContext
+                };
+
+                DisplayAnalysisResults(result);
+            }
         }
 
         #region PCB 이미지 로딩 콜백
@@ -270,23 +314,22 @@ namespace semes
                     // 결과 처리
                     Dispatcher.Invoke(() =>
                     {
-                        currentSerialNumber = result.Item1;
+                        _currentSerialNumber = result.Item1;
                         List<DefectItem> items = result.Item2;
 
-
                         // 기존 불량 항목 초기화
-                        defectItems.Clear();
+                        _defectItems.Clear();
 
                         // 파싱된 불량 항목 추가
                         foreach (var item in items)
                         {
-                            defectItems.Add(item);
+                            _defectItems.Add(item);
                         }
 
                         // 시리얼 번호 업데이트
-                        if (!string.IsNullOrEmpty(currentSerialNumber))
+                        if (!string.IsNullOrEmpty(_currentSerialNumber))
                         {
-                            SerialNumberValue.Text = currentSerialNumber;
+                            SerialNumberValue.Text = _currentSerialNumber;
                         }
                     });
                 });
@@ -304,21 +347,21 @@ namespace semes
                 ClearBtn.IsEnabled = true;
 
                 // 결과에 따라 상태 메세지 표시
-                if (defectItems.Count == 0)
+                if (_defectItems.Count == 0)
                 {
                     MessageBox.Show("이물질이 검출되지 않았습니다. 정상 PCB입니다.", "검사 결과", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {
-                    MessageBox.Show($"{defectItems.Count}개의 이물질이 검출되었습니다.", "검사 결과", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show($"{_defectItems.Count}개의 이물질이 검출되었습니다.", "검사 결과", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
 
                 // DB에 저장
-                bool saveSuccess = await _pcbInspectionService.SaveInspectionResultAsync(currentSerialNumber, defectItems);
+                bool saveSuccess = await _pcbInspectionService.SaveInspectionResultAsync(_currentSerialNumber, _defectItems);
 
                 if (saveSuccess)
                 {
-                    MessageBox.Show($"검사 결과가 DB에 저장되었습니다.\n시리얼 넘버: {currentSerialNumber}",
+                    MessageBox.Show($"검사 결과가 DB에 저장되었습니다.\n시리얼 넘버: {_currentSerialNumber}",
                         "저장 성공", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
@@ -327,8 +370,8 @@ namespace semes
                 }
 
                 // AI 분석 버튼 활성화 (추가된 부분)
-                AIAnalysisBtn.IsEnabled = (defectItems.Count > 0);
-                isAiAnalysisComplete = false;
+                AIAnalysisBtn.IsEnabled = (_defectItems.Count > 0);
+                _isAiAnalysisComplete = false;
                 AIInitialMessage.Visibility = Visibility.Visible;
                 AILoadingMessage.Visibility = Visibility.Collapsed;
                 AIAnalysisResults.Visibility = Visibility.Collapsed;
@@ -470,30 +513,35 @@ namespace semes
             // 마커 딕셔너리 초기화
             defectMarkers.Clear();
 
-            // 불량 항목 목록 초기화
-            defectItems.Clear();
+            // 정적 변수 초기화
+            _defectItems.Clear();
+            _currentSerialNumber = "";
+            _isAiAnalysisComplete = false;
+            _defectTypes = null;
+            _severityLevel = null;
+            _recommendations = null;
+            _historicalContext = null;
 
             // 불량 상세 정보 초기화
-            DefectIdValue.Text = "";
-            DefectPositionValue.Text = "";
-            DefectHeightValue.Text = "";
-            DefectSizeValue.Text = "";
+            DefectIdValue.Text = "-";
+            DefectPositionValue.Text = "-";
+            DefectHeightValue.Text = "-";
+            DefectSizeValue.Text = "-";
 
             // 시리얼 번호 초기화
             SerialNumberValue.Text = "-";
 
-            // 현재 PCB 시리얼 넘버 초기화
-            currentSerialNumber = "";
-
-            // AI 분석 관련 UI 초기화 (추가된 부분)
+            // AI 분석 관련 UI 초기화
             AIAnalysisBtn.IsEnabled = false;
-            isAiAnalysisComplete = false;
             AIInitialMessage.Visibility = Visibility.Visible;
             AILoadingMessage.Visibility = Visibility.Collapsed;
             AIAnalysisResults.Visibility = Visibility.Collapsed;
             DefectTypesList.Children.Clear();
             RecommendationsList.Items.Clear();
             HistoricalDataText.Text = "";
+
+            // 결과 패널 초기화
+            UpdateDefectResultsList();
         }
         #endregion
 
@@ -527,11 +575,11 @@ namespace semes
                 DefectResultsPanel.Children.Clear();
 
                 // 불량이 없으면 메시지 표시
-                if (defectItems.Count == 0)
+                if (_defectItems.Count == 0)
                 {
                     TextBlock noDefectsMessage = new TextBlock
                     {
-                        Text = "정상 PCB입니다.",
+                        Text = "검출된 불량이 없습니다.",
                         HorizontalAlignment = HorizontalAlignment.Center,
                         VerticalAlignment = VerticalAlignment.Center,
                         Margin = new Thickness(0, 60, 0, 0),
@@ -546,7 +594,7 @@ namespace semes
                 DefectResultsPanel.Children.Add(headerGrid);
 
                 // 각 불량에 대한 결과 항목 추가
-                foreach (var defect in defectItems)
+                foreach (var defect in _defectItems)
                 {
                     // 불량 정보를 표시할 Grid 생성
                     Grid defectGrid = CreateDefectResultItem(defect);
@@ -561,7 +609,7 @@ namespace semes
         private void ExportResult_Click(object sender, EventArgs e)
         {
             // 내보낼 데이터가 있는지 확인
-            if (defectItems == null || defectItems.Count == 0)
+            if (_defectItems == null || _defectItems.Count == 0)
             {
                 MessageBox.Show("내보낼 검출 결과가 없습니다", "알림", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
@@ -605,7 +653,7 @@ namespace semes
                 writer.WriteLine("ID,X좌표,Y좌표,너비(um),높이(um)");
 
                 // 각 불량 항목에 대한 데이터 작성
-                foreach (var defect in defectItems)
+                foreach (var defect in _defectItems)
                 {
                     writer.WriteLine($"{defect.Id},{defect.X},{defect.Y},{defect.Width},{defect.Height}");
                 }
@@ -729,7 +777,7 @@ namespace semes
         private void HighlightDefect(int defectId)
         { // 선택된 불량 찾기
             DefectItem selectedDefect = null;
-            foreach (var defect in defectItems)
+            foreach (var defect in _defectItems)
             {
                 if (defect.Id == defectId)
                 {
@@ -807,30 +855,13 @@ namespace semes
         }
 
         #region AI 불량 분석 기능
-        // 불량 유형 정보 클래스
-        public class DefectTypeInfo
-        {
-            public string TypeName { get; set; }
-            public int Count { get; set; }
-            public int Confidence { get; set; }
-        }
-
-        // AI 분석 결과 클래스
-        public class AnalysisResult
-        {
-            public List<DefectTypeInfo> DefectTypes { get; set; }
-            public string SeverityLevel { get; set; }
-            public List<string> Recommendations { get; set; }
-            public string HistoricalContext { get; set; }
-        }
-
         // AI 분석 버튼 클릭 이벤트
         private async void AIAnalysisBtn_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 // 분석 중복 실행 방지
-                if (isAiAnalysisComplete)
+                if (_isAiAnalysisComplete)
                 {
                     MessageBox.Show("이미 분석이 완료되었습니다. 새로운 분석을 위해 초기화 후 다시 시도해주세요.",
                         "알림", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -847,10 +878,10 @@ namespace semes
 
                 // 불량 데이터 준비
                 StringBuilder defectDataBuilder = new StringBuilder();
-                defectDataBuilder.AppendLine($"PCB 시리얼 번호: {currentSerialNumber}");
-                defectDataBuilder.AppendLine($"검출된 불량 수: {defectItems.Count}");
+                defectDataBuilder.AppendLine($"PCB 시리얼 번호: {_currentSerialNumber}");
+                defectDataBuilder.AppendLine($"검출된 불량 수: {_defectItems.Count}");
 
-                foreach (var defect in defectItems)
+                foreach (var defect in _defectItems)
                 {
                     defectDataBuilder.AppendLine($"불량ID: {defect.Id}, 위치: ({defect.X}, {defect.Y}), 크기: {defect.Width}x{defect.Height}");
                 }
@@ -886,13 +917,19 @@ PCB 불량 데이터:
                 // API 호출 (비동기)
                 AnalysisResult result = await _openAIService.GetAnalysisFromGPT(prompt);
 
+                // 분석 결과 저장
+                _defectTypes = result.DefectTypes;
+                _severityLevel = result.SeverityLevel;
+                _recommendations = result.Recommendations;
+                _historicalContext = result.HistoricalContext;
+                _isAiAnalysisComplete = true;
+
                 // 분석 결과 표시
                 DisplayAnalysisResults(result);
 
                 // 상태 업데이트
                 AILoadingMessage.Visibility = Visibility.Collapsed;
                 AIAnalysisResults.Visibility = Visibility.Visible;
-                isAiAnalysisComplete = true;
 
                 // 버튼 활성화 (사용자가 다시 분석할 수 있도록)
                 AIAnalysisBtn.IsEnabled = true;
@@ -904,7 +941,8 @@ PCB 불량 데이터:
                 // 오류 발생 시 초기 상태로 복귀
                 AILoadingMessage.Visibility = Visibility.Collapsed;
                 AIInitialMessage.Visibility = Visibility.Visible;
-                AIAnalysisBtn.IsEnabled = (defectItems.Count > 0);
+                AIAnalysisBtn.IsEnabled = (_defectItems.Count > 0);
+                _isAiAnalysisComplete = false;
             }
         }
 
@@ -914,8 +952,12 @@ PCB 불량 데이터:
             // 상태 초기화
             AIAnalysisResults.Visibility = Visibility.Collapsed;
             AIInitialMessage.Visibility = Visibility.Visible;
-            isAiAnalysisComplete = false;
-            AIAnalysisBtn.IsEnabled = (defectItems.Count > 0);
+            _isAiAnalysisComplete = false;
+            _defectTypes = null;
+            _severityLevel = null;
+            _recommendations = null;
+            _historicalContext = null;
+            AIAnalysisBtn.IsEnabled = (_defectItems.Count > 0);
 
             // 내용 초기화
             DefectTypesList.Children.Clear();
@@ -1012,17 +1054,22 @@ PCB 불량 데이터:
                 RecommendationsList.Items.Clear();
                 foreach (var recommendation in result.Recommendations)
                 {
-                    ListBoxItem item = new ListBoxItem();
-
-                    TextBlock text = new TextBlock
+                    // Border로 감싸서 너비 문제 해결
+                    Border container = new Border
                     {
-                        Text = recommendation,
-                        TextWrapping = TextWrapping.Wrap,
-                        Foreground = new SolidColorBrush(Color.FromRgb(33, 33, 33))
+                        Padding = new Thickness(4),
+                        BorderThickness = new Thickness(0),
+                        HorizontalAlignment = HorizontalAlignment.Stretch,
+                        Child = new TextBlock
+                        {
+                            Text = recommendation,
+                            TextWrapping = TextWrapping.Wrap,
+                            HorizontalAlignment = HorizontalAlignment.Stretch,
+                            Foreground = new SolidColorBrush(Color.FromRgb(33, 33, 33))
+                        }
                     };
 
-                    item.Content = text;
-                    RecommendationsList.Items.Add(item);
+                    RecommendationsList.Items.Add(container);
                 }
 
                 // 과거 데이터 분석
@@ -1039,6 +1086,23 @@ PCB 불량 데이터:
             public int Y { get; set; }
             public double Height { get; set; }
             public double Width { get; set; }
+        }
+
+        // 불량 유형 정보 클래스
+        public class DefectTypeInfo
+        {
+            public string TypeName { get; set; }
+            public int Count { get; set; }
+            public int Confidence { get; set; }
+        }
+
+        // AI 분석 결과 클래스
+        public class AnalysisResult
+        {
+            public List<DefectTypeInfo> DefectTypes { get; set; }
+            public string SeverityLevel { get; set; }
+            public List<string> Recommendations { get; set; }
+            public string HistoricalContext { get; set; }
         }
     }
 }
