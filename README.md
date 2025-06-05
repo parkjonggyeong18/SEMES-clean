@@ -77,25 +77,6 @@
 
 ---
 
-## 📁 폴더 구조
-
-```plaintext
-/SEMES-clean
-├── Executable/            # C++ 기반 detect_defects.exe
-├── semes/                 # WPF UI 프로젝트
-│   ├── Pages/             # 기능별 페이지 모음
-│   ├── Services/          # EXE 실행, 데이터 가공 로직
-│   ├── Models/            # Entity, DTO 클래스
-│   ├── ViewModels/        # MVVM 패턴 구조
-│   ├── Resources/         # XAML 스타일 및 리소스
-├── sql/                   # DB 생성 및 초기화 SQL 스크립트
-├── docs/                  # 시연 시나리오, 보고서, 이미지
-├── README.md
-└── ...
-```
-
----
-
 ## 🧪 성능
 
 | 테스트 항목        | 결과 (평균)       |
